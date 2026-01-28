@@ -1,21 +1,20 @@
 @echo off
 echo ===============================
-echo Запуск сервера
+echo Starting server....
 echo ===============================
 
-REM Создаём venv если нет
 if not exist .venv (
-    echo Создаю виртуальное окружение...
-    python -m venv .venv
+    echo now installing venv...
+    python3 -m venv .venv
 )
 
-echo Активирую виртуальное окружение...
+echo activation virtual enviroment
 call .venv\Scripts\activate
 
-echo Устанавливаю зависимости...
-pip install -r requirements.txt
+echo installing requirements
+pip3 install -r requirements.txt
 
-echo Запускаю сервер...
-uvicorn api_entry:app --host 127.0.0.1 --port 8000
+echo server started
+uvicorn api_entry:app 
 
 pause
