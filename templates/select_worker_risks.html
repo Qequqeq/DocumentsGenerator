@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Риски по работникам{% endblock %}
+
+{% block content %}
+
+<h1>Риски по работникам</h1>
+
+<div class="info">
+    Выберите работника для ввода оценок рисков.<br>
+    Заполните для всех, чтобы сгенерировать карты.
+</div>
+
+<ul>
+    {% for worker in workers %}
+    <li>
+        <a href="/worker_risks/{{ job_id }}/{{ loop.index0 }}">
+            {{ worker.position }}
+        </a>
+        {% if worker.position in risk_inputs %}
+            <span style="color: green;">(Заполнено)</span>
+        {% else %}
+            <span style="color: red;">(Не заполнено)</span>
+        {% endif %}
+    </li>
+    {% else %}
+    <li>Работники не найдены</li>
+    {% endfor %}
+</ul>
+
+{% if message %}
+<p style="color: green; font-weight: bold;">{{ message }}</p>
+{% endif %}
+
+<a href="/generate/{{ job_id }}" class="btn" style="font-size: 1.3em; padding: 1em 2em;">
+    Сгенерировать карты →
+</a>
+
+{% endblock %}

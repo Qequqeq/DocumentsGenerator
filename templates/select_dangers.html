@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Выбор опасностей{% endblock %}
+
+{% block content %}
+
+<h1>Какие опасности актуальны для предприятия?</h1>
+
+<form method="post" action="/select-dangers">
+    <input type="hidden" name="job_id" value="{{ job_id }}">
+
+    <ul>
+        {% for danger in dangers %}
+        <li>
+            <input type="checkbox" 
+                   id="d{{ danger.danger_number }}" 
+                   name="danger_ids" 
+                   value="{{ danger.danger_number }}">
+            <label for="d{{ danger.danger_number }}">
+                {{ danger.danger_number }}. {{ danger.danger_name }}
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <button type="submit">Далее</button>
+</form>
+
+{% endblock %}
