@@ -15,12 +15,13 @@
 <div class="info">
     Обработано работников: <strong>{{ generated_count|default(0) }} из {{ total_workers|default(0) }}</strong>
 </div>
+<a href="/save-project/{{ job_id }}" class="btn" style="background: #27ae60;">Сохранить проект</a>
 
 {% if zip_ready %}
     <div style="margin: 40px 0; text-align: center;">
         <progress id="progress-success" value="100" max="100" style="width: 80%; height: 28px;"></progress>
         <p style="font-size: 1.4em; margin: 20px 0; color: #27ae60; font-weight: bold;">
-            Готово! Карты сформированы и упакованы в архив.
+            Карты сформированы и упакованы в архив.
         </p>
     </div>
 

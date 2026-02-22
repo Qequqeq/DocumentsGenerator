@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Загрузка данных{% endblock %}
+
+{% block content %}
+
+<h1>Загрузка данных</h1>
+
+<div class="info">
+    Загрузите файлы проекта.
+</div>
+
+<form action="/upload_project" method="post" enctype="multipart/form-data">
+
+    <p>
+        <label for="project_zip">Файл проекта:</label><br>
+        <input type="file"
+               id="project_zip"
+               name="project_zip"
+               accept=".zip"
+               required 
+               style="width: 300px; padding: 8px; font-size: 1.05em;">
+    </p>
+
+    <p>
+        <label for="doc_date">Дата составления документа (дд.мм.гггг):</label><br>
+        <input type="text"
+               id="doc_date"
+               name="doc_date"
+               placeholder="например: 15.10.2025"
+               value="{{ default_date }}"
+               required
+               style="width: 300px; padding: 8px; font-size: 1.05em;">
+    </p>
+
+    <p>
+        <label for="card_template_file">Шаблон карты (.docx):</label><br>
+        <input type="file"
+               id="card_template_file"
+               name="card_template_file"
+               accept=".docx"
+               required>
+    </p>
+
+    <p>
+        <label for="rep_template_file">Шаблон отчета (.docx):</label><br>
+        <input type="file"
+               id="rep_template_file"
+               name="rep_template_file"
+               accept=".docx"
+               required>
+    </p>
+
+    <p>
+        <label for="people_file">Список работников / должностей (.xlsx):</label><br>
+        <input type="file"
+               id="people_file"
+               name="people_file"
+               accept=".xlsx"
+               required>
+    </p>
+
+    <p>
+        <label for="org_file">Данные организации (.xlsx):</label><br>
+        <input type="file"
+               id="org_file"
+               name="org_file"
+               accept=".xlsx"
+               required>
+    </p>
+
+    <button type="submit">Загрузить и продолжить</button>
+
+</form>
+
+{% endblock %}
