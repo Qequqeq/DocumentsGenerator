@@ -63,7 +63,7 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
         }
         nmbr += 1
         doc.render(context)
-        doc.save(output_dir / f'Карта{workName.position}.docx')
+        doc.save(output_dir / f'Карта{workName.ID}{workName.position}.docx')
 
 
 def generate_report(
@@ -196,7 +196,7 @@ def generate_report(
 
     doc.render(context)
 
-    report_path = output_dir / "отчет.docx"
+    report_path = output_dir / "Отчет.docx"
     doc.save(report_path)
     print("Сгенерирован полный отчет")
     return report_path
