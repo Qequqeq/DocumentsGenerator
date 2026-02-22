@@ -1,17 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Оценка рисков: {{ worker.position }}{% endblock %}
+{% block title %}Создание шаблона должности{% endblock %}
 
 {% block content %}
-
-<h1>Оценка рисков: {{ worker.position }}</h1>
+<h1>Создание шаблона должности</h1>
 
 <div class="info">
-    Заполните оценки для каждого риска.<br>
-    Если какой-то из множителей равен нулю, то риск будет пропущен.
+    Заполните оценки для каждого риска. После сохранения будет скачан JSON-файл.
 </div>
 
-<form method="post" action="/save_worker_risks/{{ job_id }}/{{ worker_idx }}">
+<form method="post" action="/create-template">
+    <p>
+        <label for="template_name">Название должности:</label><br>
+        <input type="text" id="template_name" name="template_name" required
+               style="width: 300px; padding: 8px; font-size: 1.1em;">
+    </p>
 
     {% for danger in dangers %}
     <h2 style="margin-top: 2em;">{{ danger.danger_number }}. {{ danger.danger_name }}
@@ -81,23 +84,12 @@
     {% endfor %}
     {% endfor %}
 
-    <div style="margin-top: 2.5em; display: flex; gap: 1.5em; flex-wrap: wrap;">
+        <div style="margin-top: 2.5em;">
         <button type="submit" class="btn" style="font-size: 1.2em; padding: 0.9em 2em;">
-            Сохранить и перейти далее
+            Скачать шаблон
         </button>
-        <button type="submit" name="action" value="save_as_template" formaction="/save-as-template/{{ job_id }}/{{ worker_idx }}" class="btn" style="background: #3498db; font-size: 1.2em; padding: 0.9em 2em;">
-        Сохранить как шаблон
-        </button>
-
-        {% if worker_idx > 0 %}
-        <a href="/worker_risks/{{ job_id }}/{{ worker_idx - 1 }}"
-           class="btn" style="background: #7f8c8d; font-size: 1.1em; padding: 0.8em 1.8em;">
-            Назад
-        </a>
-        {% endif %}
-
-        <a href="/select-dangers?job_id={{ job_id }}" class="btn" style="background: #95a5a6; font-size: 1.1em; padding: 0.8em 1.8em;">
-            К списку работников
+        <a href="/" class="btn" style="background: #95a5a6; font-size: 1.1em; padding: 0.8em 1.8em; margin-left: 1em;">
+            В главное меню
         </a>
     </div>
 </form>

@@ -1,39 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}Риски по работникам{% endblock %}
+{% block title %}Выбор работников для заполнения рисков{% endblock %}
 
 {% block content %}
+<h1>Работники организации</h1>
+<p>Выберите работника для заполнения рисков или загрузите готовый шаблон.</p>
 
-<h1>Риски по работникам</h1>
-
-<div class="info">
-    Выберите работника для ввода оценок рисков.<br>
-    Заполните для всех, чтобы сгенерировать карты.
-</div>
-
-<ul>
-    {% for worker in workers %}
-    <li>
-        <a href="/worker_risks/{{ job_id }}/{{ loop.index0 }}">
-            {{ worker.position }}
-        </a>
-        {% if worker.position in risk_inputs %}
-            <span style="color: green;">(Заполнено)</span>
+{% for worker in workers %}
+<div style="margin-bottom: 1.5em; padding: 1em; border: 1px solid #dee2e6; border-radius: 6px; background: #f8f9fa; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5em;">
+    <div style="flex: 2; min-width: 250px;">
+        <strong>{{ worker.position }}</strong><br>
+        <span style="color: #6c757d;">{{ worker.full_name }}</span>
+    </div>
+    <div style="flex: 1; min-width: 150px;">
+        {% if worker.position in generated_cards %}
+            <span style="color: #28a745;">Сгенерировано</span>
         {% else %}
-            <span style="color: red;">(Не заполнено)</span>
+            <span style="color: #dc3545;">Не заполнено</span>
         {% endif %}
-    </li>
-    {% else %}
-    <li>Работники не найдены</li>
-    {% endfor %}
-</ul>
+    </div>
+    <div style="flex: 1; min-width: 120px;">
+        <a href="/worker_risks/{{ job_id }}/{{ loop.index0 }}" class="btn-small">Заполнить вручную</a>
+    </div>
+    <div style="flex: 3; min-width: 300px;">
+        <form method="post" action="/apply-template/{{ job_id }}/{{ loop.index0 }}" enctype="multipart/form-data" style="display: flex; gap: 0.5em; align-items: center;">
+            <input type="file" name="template_file" accept=".json" required style="flex: 2; padding: 0.3em;">
+            <button type="submit" class="btn-small">Применить шаблон</button>
+        </form>
+    </div>
+</div>
+{% endfor %}
 
-{% if message %}
-<p style="color: green; font-weight: bold;">{{ message }}</p>
-{% endif %}
-
-<a href="/generate/{{ job_id }}" class="btn" style="font-size: 1.3em; padding: 1em 2em;">
-    Сгенерировать карты →
-</a>
-
+<div style="margin-top: 2em;">
+    <a href="/generate/{{ job_id }}" class="btn">Сформировать все отчёты</a>
+    <a href="/" class="btn" style="background: #95a5a6;">В главное меню</a>
+</div>
 {% endblock %}

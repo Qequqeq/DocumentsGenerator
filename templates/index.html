@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Главное меню{% endblock %}
+
+{% block content %}
+<h1>Главное меню</h1>
+<div style="margin-top: 2em; display: flex; gap: 2em; flex-wrap: wrap;">
+    <a href="/upload" class="btn" style="font-size: 1.2em; padding: 1em 2em;">Новый проект</a>
+    <a href="/" class="btn" style="font-size: 1.2em; padding: 1em 2em; background: #7f8c8d;">Открыть проект</a>
+    <a href="/create-template" class="btn" style="font-size: 1.2em; padding: 1em 2em;">Создать шаблон должности</a>
+</div>
+{% endblock %}
