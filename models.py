@@ -5,7 +5,7 @@ from RisksAndDangers import *
 class WorkName:
     ID: int  # номер в документе
     position: str # <<Генеральный директор>> и т.п.
-    full_names: list[str]  # ФИО
+    division: list[str] # название подразделения
     number_at_workplace: int # кол-во работников на месте
     woman: int # кол-во женщин
     minors: int # кол-во несовершеннолетних
@@ -16,6 +16,10 @@ class WorkName:
     summary_info: str  # описание итогового результат
     workerDangers: List[DangerTemplate] = field(default_factory=list) # все опасности (и риски) работника
 
+@dataclass
+class Chairman:
+    position: str
+    full_name: str
 
 @dataclass
 class Organization:
@@ -28,7 +32,7 @@ class Organization:
     okved: str # Код основного вида экономической деятельности работодателя ОКВЭД2
     oktmo: str # Код территории по ОКТМО2
     adres: str # Юридический адрес организации
-    leader: Optional[WorkName]  # Руководитель организации (должность, Ф.И.О. полностью)
-    chairman: WorkName # Председатель комиссии по проведению специальной оценки условий труда (должность, ФИО полностью)
-    com_members: List[WorkName] # Члены Комиссии по проведению СОУТ3 (должность, ФИО полностью)
+    leader: Chairman  # Руководитель организации (должность, Ф.И.О. полностью)
+    chairman: Chairman # Председатель комиссии по проведению специальной оценки условий труда (должность, ФИО полностью)
+    com_members: List[Chairman] # Члены Комиссии по проведению СОУТ3 (должность, ФИО полностью)
     workers: List[WorkName] # Все сотрудники

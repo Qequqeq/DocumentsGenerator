@@ -1,60 +1,73 @@
-#/home/kniv/Документы/Николай/ПримерыИсходников/Люди.xlsx
-#/home/kniv/Документы/Николай/ПримерыИсходников/Орга.xlsx
-
 from models import *
 
 import pandas as pd
 import pathlib as path
 
 
+def make_person(person_data):
+    person_data = person_data.split()
+    start_name_idx = 0
+    while person_data[start_name_idx][0].upper() != person_data[start_name_idx][0]:
+        start_name_idx += 1
+    person_pos = ' '.join(person_data[:start_name_idx])
+    person_name = ' '.join(person_data[start_name_idx:])
+    return person_pos, person_name
+
 def parce_people_data(person_path=''):
+    worker_number = 1
+    alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     if person_path == '':
         people_path = path.Path(input("Введите путь к людям: "))
     else:
         people_path = person_path
 
     df = pd.read_excel(people_path, header=0)
-    df = df.dropna(how="all")[2::]
-
-    numeric_cols = [0, 6, 7, 8, 9]
-    defaults = [0, 1, 0, 0, 0]
-    for i, col_idx in enumerate(numeric_cols):
-        df.iloc[:, col_idx] = pd.to_numeric(
-            df.iloc[:, col_idx], errors='coerce'
-        ).fillna(defaults[i]).astype(int)
+    df = df.fillna(int(0))
 
     workers: list[WorkName] = []
-    positions : list[str] = []
-
+    positions: list[str] = []
+    div = []
+    level = []
     for _, row in df.iterrows():
-        if str(row.iloc[1]).strip() not in positions:
-            workers.append(
-                WorkName(
-                    position=str(row.iloc[1]).strip(),
-                    full_names=[str(row.iloc[13]).strip()],
-                    number_at_workplace=int(row.iloc[6]),
-                    woman=int(row.iloc[7]),
-                    minors=int(row.iloc[8]),
-                    disabled=int(row.iloc[9]),
-                    equipment=str(row.iloc[11]).strip(),
-                    materials=str(row.iloc[12]).strip(),
-                    ID=int(row.iloc[0]),
-                    workerDangers = [],
-                    workerTotal = 0.0,
-                    summary_info = ''
-                )
-            )
-            positions.append(str(row.iloc[1]).strip())
-        else:
-            for worker in workers:
-                if worker.position == str(row.iloc[1]).strip():
-                    worker.number_at_workplace += int(row.iloc[6])
-                    worker.woman += int(row.iloc[7])
-                    worker.minors += int(row.iloc[8])
-                    worker.disabled += int(row.iloc[9])
-                    worker.full_names.append(str(row.iloc[13]).strip())
-    return workers
+        if str(row.iloc[0]) in alph:
+            if not level:
+                level.append(str(row.iloc[0]))
+                div.append(str(row.iloc[2]))
+            else:
+                while len(level) > 0 and ord(level[-1]) >= ord(str(row.iloc[0])):
+                    level = level[:-1]
+                    div = div[:-1]
 
+                div.append(str(row.iloc[2]))
+                level.append(str(row.iloc[0]))
+        else:
+            if str(row.iloc[1].strip()) not in positions:
+                workers.append(
+                    WorkName(
+                        ID = worker_number,
+                        position= str(row.iloc[1].strip()),
+                        division=div,
+                        number_at_workplace=int(row.iloc[2]),
+                        woman=int(row.iloc[3]),
+                        minors=int(row.iloc[4]),
+                        disabled=int(row.iloc[5]),
+                        equipment=str(row.iloc[6]).strip(),
+                        materials=str(row.iloc[7]).strip(),
+                        workerDangers=[],
+                        workerTotal=0.0,
+                        summary_info=''
+                    )
+                )
+                worker_number += 1
+                positions.append(str(row.iloc[1].strip()))
+            else:
+                for worker in workers:
+                    if worker.position == str(row.iloc[1]).strip():
+                        worker.number_at_workplace += int(row.iloc[2])
+                        worker.woman += int(row.iloc[3])
+                        worker.minors += int(row.iloc[4])
+                        worker.disabled += int(row.iloc[5])
+    return workers
 
 def find_worker_in_text(text: str, workers: List[WorkName]) -> Optional[WorkName]:
     if pd.isna(text) or text == "":
@@ -96,49 +109,55 @@ def parce_org_data(org_path='', workers_list=None):
     okogy = get_val(5)
     okved = get_val(6)
     oktmo = get_val(7)
-    adres = get_val(9)
+    adres = get_val(8)
 
-    leader_text = get_val(16)
-    leader = find_worker_in_text(leader_text, workers_list)
+    leader_text = str(df.iloc[9, 1])
+    chairman_text = str(df.iloc[10, 1])
+    chairmen_text = str(df.iloc[11, 1]).split(',')
 
-    chairman_text = get_val(21)
-    chairman = find_worker_in_text(chairman_text, workers_list)
-
-    com_members = []
-    current_row = 23
-    max_rows = len(df)
-
-    while current_row < max_rows:
-        val_text = get_val(current_row)
-        col0_text = str(df.iloc[current_row, 0])
-        if (not pd.isna(col0_text) and any(x in col0_text for x in ["¹", "²", "3 –"])) or val_text == "":
-            if "Члены Комиссии" not in col0_text and not pd.isna(df.iloc[current_row, 0]):
-                break
-
-        worker = find_worker_in_text(val_text, workers_list)
-        if worker:
-            com_members.append(worker)
-
-        current_row += 1
-
-    org = Organization(
-        full_name=full_name,
-        short_name=short_name,
-        kpp=kpp,
-        inn=inn,
-        okpo=okpo,
-        okogy=okogy,
-        okved=okved,
-        oktmo=oktmo,
-        adres=adres,
-        leader=leader,
-        chairman=chairman,
-        com_members=com_members,
-        workers=workers_list
+    lead_typle = make_person(leader_text)
+    leader = Chairman(
+        position=lead_typle[0],
+        full_name=lead_typle[1]
+    )
+    chairman_typle = make_person(chairman_text)
+    chairman = Chairman(
+        position=chairman_typle[0],
+        full_name=chairman_typle[1]
     )
 
-    return org
 
+    chairmen_typle = []
+    for man in chairmen_text:
+        chairmen_typle.append(make_person(man))
+
+    chairmen = []
+    for tpl in chairmen_typle:
+        chairmen.append(
+            Chairman(
+                position= tpl[0],
+                full_name= tpl[1]
+            )
+        )
+    if chairman.full_name == chairmen[0].full_name:
+        chairmen = chairmen[1:]
+
+    org = Organization(
+        full_name= full_name,
+        short_name= short_name,
+        kpp= kpp,
+        inn= inn,
+        okpo= okpo,
+        okogy= okogy,
+        okved= okved,
+        oktmo= oktmo,
+        adres= adres,
+        leader = leader,
+        chairman= chairman,
+        com_members= chairmen,
+        workers= workers_list
+    )
+    return org
 
 def translit(word):
     converter = {

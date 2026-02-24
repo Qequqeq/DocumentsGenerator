@@ -1,14 +1,9 @@
 from docxtpl import DocxTemplate
-from parser import *
 from getWorkerRisks import *
 from RisksAndDangers import *
-import pathlib as path
 from pathlib import Path
 
-nmbr = 1
-
 def generate_worker_card(template_path, doc_date, org_data, workName, output_dir: Path = Path(".")):
-    global nmbr
     doc = DocxTemplate(template_path)
     danger_groups_list = []
     if workName.workerDangers:
@@ -24,7 +19,9 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
                     "ch_info": risk_tpl.chance_info,
                     "kef": str(risk_tpl.coefficient).replace('.', ','),
                     "kef_info": risk_tpl.coefficient_info,
-                    "sum": f"{risk_tpl.summary:.1f}".replace('.', ',')
+                    "sum": f"{risk_tpl.summary:.1f}".replace('.', ','),
+                    "total_let": f"{get_summary_info(summary=risk_tpl.summary)[:1]}",
+                    "total_text": f"{get_summary_info(summary=risk_tpl.summary)[2:]}"
                 })
             danger_groups_list.append({
                 "group_id": danger_tpl.danger_number,
@@ -32,17 +29,22 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
                 "group_score": f"{danger_tpl.summary:.1f}",
                 "risk_list": items_list
             })
+        comission = []
+        for com_member in org_data.com_members:
+            comission.append({
+                "name": com_member.full_name
+            })
 
         context = {
             'organizationName': org_data.full_name,
             'organizationAdres': org_data.adres,
-            'organizationLead': org_data.leader.full_names[0],
+            'organizationLead': org_data.leader.full_name,
             'INN': org_data.inn,
             'OKPO': org_data.okpo,
             'OKOGY': org_data.okogy,
             'OKVED': org_data.okved,
             'OKTMO': org_data.oktmo,
-            'workNameID': nmbr,
+            'workNameID': workName.ID,
             'workNamePos': workName.position,
             'workNameNumber': workName.number_at_workplace,
             'workNameWoman': workName.woman,
@@ -52,16 +54,13 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
             'materials_list': [item.strip() for item in workName.materials.split(',')] if workName.materials else [],
             'danger_groups': danger_groups_list,
             'TOTAL': f"{workName.workerTotal:.1f}".replace('.', ','),
-            'com_chairman': org_data.chairman.full_names[0],
+            'com_chairman': org_data.chairman.full_name,
             'RiskKlass': workName.summary_info,
             'controlInfo': CONTROL_INFO[workName.summary_info],
             'documentDate': doc_date,
-            'com_member1': org_data.chairman.full_names[0],
-            'com_member2': org_data.com_members[0].full_names[0] if len(org_data.com_members) > 0 else " ",
-            'com_member3': org_data.com_members[1].full_names[0] if len(org_data.com_members) > 1 else " ",
-            'com_member4': org_data.com_members[2].full_names[0] if len(org_data.com_members) > 2 else " "
+            'comission': comission,
+            'division': workName.division
         }
-        nmbr += 1
         doc.render(context)
         doc.save(output_dir / f'Карта{workName.ID}{workName.position}.docx')
 
@@ -70,7 +69,6 @@ def generate_report(
         report_template_path: Path,
         output_dir: Path,
         org_data,
-        dangers,
         people_data,
         doc_date: str
 ):
@@ -99,6 +97,7 @@ def generate_report(
                 'group_name': d.danger_name,
                 'risk_list': risk_list
             })
+
 
     first_table_context = {
         'totalWorkPlaces': 0,
@@ -138,27 +137,27 @@ def generate_report(
         first_table_context['totalWoman'] += worker.woman
         first_table_context['totalMinor'] += worker.minors
         first_table_context['totalDisabled'] += worker.disabled
-        if worker.summary_info == 'Пренебрежительно малый (E)':
+        if worker.summary_info == 'E (Пренебрежительно малый риск)':
             first_table_context['totalWorkersE'] += worker.number_at_workplace
             first_table_context['totalWomanE'] += worker.woman
             first_table_context['totalMinorE'] += worker.minors
             first_table_context['totalDisabledE'] += worker.disabled
-        if worker.summary_info == 'Приемлемый (допустимый) (D)':
+        if worker.summary_info == 'D (Приемлемый (допустимый) риск)':
             first_table_context['totalWorkersD'] += worker.number_at_workplace
             first_table_context['totalWomanD'] += worker.woman
             first_table_context['totalMinorD'] += worker.minors
             first_table_context['totalDisabledD'] += worker.disabled
-        if worker.summary_info == 'Средний (существенный) (C)':
+        if worker.summary_info == 'C (Средний (существенный) риск)':
             first_table_context['totalWorkersC'] += worker.number_at_workplace
             first_table_context['totalWomanC'] += worker.woman
             first_table_context['totalMinorC'] += worker.minors
             first_table_context['totalDisabledC'] += worker.disabled
-        if worker.summary_info == 'Высокий (B)':
+        if worker.summary_info == 'B (Высокий риск)':
             first_table_context['totalWorkersB'] += worker.number_at_workplace
             first_table_context['totalWomanB'] += worker.woman
             first_table_context['totalMinorB'] += worker.minors
             first_table_context['totalDisabledB'] += worker.disabled
-        if worker.summary_info == 'Крайне высокий (A)':
+        if worker.summary_info == 'A (Крайне высокий риск)':
             first_table_context['totalWorkersA'] += worker.number_at_workplace
             first_table_context['totalWomanA'] += worker.woman
             first_table_context['totalMinorA'] += worker.minors
@@ -167,30 +166,47 @@ def generate_report(
     pos_summary = []
     for worker in people_data:
         full_control_info = CONTROL_INFO[worker.summary_info].split(" ")
-        control_info = full_control_info[0] + " "+ full_control_info[1]
+        control_info = full_control_info[0] + " " + full_control_info[1]
 
         pos_summary.append({
             'num': worker.ID,
             'name': worker.position,
             'risk': worker.summary_info,
             'total': f"{worker.workerTotal:.1f}".replace('.', ','),
-            'control_info': control_info
+            'control_info': control_info,
+            'div': worker.division
         })
 
+    all_divisions = []
+    for worker in people_data:
+        if worker.division not in all_divisions:
+            all_divisions.append(worker.division)
+
+    divisions_summary = []
+    for div in all_divisions:
+        workers_in_div = [w for w in pos_summary if w['div'] == div]
+        divisions_summary.append({
+            'division': div,
+            'workers': workers_in_div
+        })
+
+    comission = []
+    for com_member in org_data.com_members:
+        comission.append({
+            "name": com_member.full_name
+        })
 
     context = {
-        'com_chairman': org_data.chairman.full_names[0],
+        'com_chairman': org_data.chairman.full_name,
         'organizationName': org_data.full_name,
         'organizationAdres': org_data.adres,
         'chairman_pos': org_data.chairman.position,
         'document_date': doc_date,
         'danger_groups': dangers_list,
         'totalWorkPlaces': first_table_context['totalWorkPlaces'],
-        'pos_summary': pos_summary,
-        'com_member1': org_data.chairman.full_names[0],
-        'com_member2': org_data.com_members[0].full_names[0] if len(org_data.com_members) > 0 else " ",
-        'com_member3': org_data.com_members[1].full_names[0] if len(org_data.com_members) > 1 else " ",
-        'com_member4': org_data.com_members[2].full_names[0] if len(org_data.com_members) > 2 else " "
+        'divisions': all_divisions,
+        'divisions_summary': divisions_summary,
+        'comission': comission
     }
     context = context | first_table_context
 
