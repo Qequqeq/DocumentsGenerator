@@ -19,6 +19,13 @@
             <span style="color: #dc3545;">Не заполнено</span>
         {% endif %}
     </div>
+    <div style="flex: 1; min-width: 150px;">
+        {% if worker.workerTotal != 0 %}
+            <span style="color: #28a745;">{{ worker.workerTotal }}</span>
+        {% else %}
+            <span style="color: #dc3545;">{{ worker.workerTotal }}</span>
+        {% endif %}
+    </div>
     <div style="flex: 1; min-width: 120px;">
         <a href="/worker_risks/{{ job_id }}/{{ loop.index0 }}" class="btn-small">Заполнить вручную</a>
     </div>
