@@ -29,7 +29,9 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 UPLOAD_DIR = Path("temp/uploads")
+UPLOAD_DIR_SEC = Path("temp/jobs")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR_SEC.mkdir(parents=True, exist_ok=True)
 
 
 @router.get("/")
@@ -478,7 +480,7 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
             prefix, rest = key.split('__', 1)
             d_str, r_str = rest.split('__', 1)
             d_id = int(d_str)
-            r_id = r_str  # уже с точками
+            r_id = r_str
             val = value.strip()
             if not val:
                 continue
@@ -645,21 +647,17 @@ def generate(request: Request, job_id: str):
             report_template_path=report_template,
             output_dir=output_dir,
             org_data=job["org_data"],
-            dangers=job["org_dangers"],
             people_data=job["people_data"],
             doc_date=job["doc_date"]
         )
     else:
         print("Шаблон отчёта отсутствует — отчёт не создан")
 
-    # Always create/recreate the ZIP file
     zip_path = UPLOAD_DIR / f"{job_id}_cards.zip"
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        # Все карты
         for doc_file in output_dir.glob("Карта*.docx"):
             zipf.write(doc_file, arcname=doc_file.name)
 
-        # Отчёт
         report_file = output_dir / "Отчет.docx"
         if report_file.exists():
             zipf.write(report_file, arcname="Отчет.docx")
@@ -709,14 +707,13 @@ async def shutdown():
         try:
             if UPLOAD_DIR.exists():
                 shutil.rmtree(UPLOAD_DIR, ignore_errors=True)
-                print("Временные файлы удалены")
+            if UPLOAD_DIR_SEC.exists():
+                shutil.rmtree(UPLOAD_DIR_SEC, ignore_errors=True)
         except Exception as e:
             print(f"Ошибка при удалении временных файлов: {e}")
 
-    # Запускаем очистку
     cleanup_all_temp_files()
 
-    # Останавливаем сервер через 1 секунду
     async def stop_server():
         await asyncio.sleep(1)
         print("Остановка сервера...")
