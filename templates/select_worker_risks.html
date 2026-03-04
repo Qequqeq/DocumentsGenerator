@@ -21,9 +21,9 @@
     </div>
     <div style="flex: 1; min-width: 150px;">
         {% if worker.workerTotal != 0 %}
-            <span style="color: #28a745;">{{ worker.workerTotal }}</span>
+            <span style="color: #28a745;">{{ worker.workerTotal | round(1) }}</span>
         {% else %}
-            <span style="color: #dc3545;">{{ worker.workerTotal }}</span>
+            <span style="color: #dc3545;">{{ worker.workerTotal | round(1) }}</span>
         {% endif %}
     </div>
     <div style="flex: 1; min-width: 120px;">
