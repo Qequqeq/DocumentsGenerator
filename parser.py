@@ -5,12 +5,10 @@ import pathlib as path
 
 
 def make_person(person_data):
-    person_data = person_data.split()
-    start_name_idx = 0
-    while person_data[start_name_idx][0].upper() != person_data[start_name_idx][0]:
-        start_name_idx += 1
-    person_pos = ' '.join(person_data[:start_name_idx])
-    person_name = ' '.join(person_data[start_name_idx:])
+    person_data = person_data.split("@")
+    print(person_data)
+    person_pos = person_data[0]
+    person_name = person_data[1]
     return person_pos, person_name
 
 def parce_people_data(person_path=''):
