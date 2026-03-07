@@ -628,11 +628,18 @@ async def save_project(request: Request, job_id: str):
     shutil.rmtree(temp_dir, ignore_errors=True)
     org_name = sanitize_filename(job["org_data"].full_name)
     zip_buffer.seek(0)
-    return Response(
-        content=zip_buffer.getvalue(),
-        media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=project_{org_name}.zip"}
-    )
+    try:
+        return Response(
+            content=zip_buffer.getvalue(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename=project_{org_name}.zip"}
+        )
+    except:
+        return Response(
+            content=zip_buffer.getvalue(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename=project.zip"}
+        )
 
 
 @router.get("/generate/{job_id}")
