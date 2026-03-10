@@ -6,7 +6,6 @@ import pathlib as path
 
 def make_person(person_data):
     person_data = person_data.split("@")
-    print(person_data)
     person_pos = person_data[0]
     person_name = person_data[1]
     return person_pos, person_name
@@ -39,32 +38,24 @@ def parce_people_data(person_path=''):
                 div.append(str(row.iloc[2]))
                 level.append(str(row.iloc[0]))
         else:
-            if str(row.iloc[1].strip()) not in positions:
-                workers.append(
-                    WorkName(
-                        ID = worker_number,
-                        position= str(row.iloc[1].strip()),
-                        division=div,
-                        number_at_workplace=int(row.iloc[2]),
-                        woman=int(row.iloc[3]),
-                        minors=int(row.iloc[4]),
-                        disabled=int(row.iloc[5]),
-                        equipment=str(row.iloc[6]).strip(),
-                        materials=str(row.iloc[7]).strip(),
-                        workerDangers=[],
-                        workerTotal=0.0,
-                        summary_info=''
-                    )
+            workers.append(
+                WorkName(
+                    ID = worker_number,
+                    position= str(row.iloc[1].strip()),
+                    division=div,
+                    number_at_workplace=int(row.iloc[2]),
+                    woman=int(row.iloc[3]),
+                    minors=int(row.iloc[4]),
+                    disabled=int(row.iloc[5]),
+                    equipment=str(row.iloc[6]).strip(),
+                    materials=str(row.iloc[7]).strip(),
+                    workerDangers=[],
+                    workerTotal=0.0,
+                    summary_info=''
                 )
-                worker_number += 1
-                positions.append(str(row.iloc[1].strip()))
-            else:
-                for worker in workers:
-                    if worker.position == str(row.iloc[1]).strip():
-                        worker.number_at_workplace += int(row.iloc[2])
-                        worker.woman += int(row.iloc[3])
-                        worker.minors += int(row.iloc[4])
-                        worker.disabled += int(row.iloc[5])
+            )
+            worker_number += 1
+            positions.append(str(row.iloc[1].strip()))
     return workers
 
 def find_worker_in_text(text: str, workers: List[WorkName]) -> Optional[WorkName]:

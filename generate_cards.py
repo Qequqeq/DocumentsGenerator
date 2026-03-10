@@ -72,6 +72,25 @@ def generate_report(
         people_data,
         doc_date: str
 ):
+    def risk_in_list(risk, list):
+        for r in list:
+            if r['number'] == risk['number'] and r['name'] == risk['name']:
+                return True
+        return False
+
+    def danger_in_list(dang, list):
+        for d in list:
+            if d['group_id'] == dang['group_id'] and d['group_name'] == dang['group_name']:
+                risks = []
+                for risk in d['risk_list']:
+                    risks.append(risk['number'])
+                for risk in dang['risk_list']:
+                    if risk['number'] not in risks:
+                        d['risk_list'].append(risk)
+
+                return True
+        return False
+
     doc = DocxTemplate(report_template_path)
     dangers_list = []
     for w in people_data:
@@ -84,19 +103,21 @@ def generate_report(
                         'name': r.risk_name,
                         'fix': r.management_measures
                     }
-                    if risk_info not in risk_list:
+                    if not risk_in_list(risk_info, risk_list):
                         risk_list.append(risk_info)
             danger_info = {
                 'group_id': d.danger_number,
                 'group_name': d.danger_name,
                 'risk_list': risk_list
             }
-            if danger_info not in dangers_list:
-                dangers_list.append({
-                'group_id': d.danger_number,
-                'group_name': d.danger_name,
-                'risk_list': risk_list
-            })
+            if len(dangers_list) == 0:
+                dangers_list.append(danger_info)
+            if not danger_in_list(danger_info, dangers_list):
+                dangers_list.append(danger_info)
+
+    dangers_list.sort(key = lambda x: x['group_id'])
+    for dang in dangers_list:
+        dang['risk_list'].sort(key = lambda x: int(''.join(x['number'].split('.')), 10))
 
 
     first_table_context = {
@@ -138,26 +159,31 @@ def generate_report(
         first_table_context['totalMinor'] += worker.minors
         first_table_context['totalDisabled'] += worker.disabled
         if worker.summary_info == 'E (Пренебрежительно малый риск)':
+            first_table_context['totalE'] += worker.number_at_workplace
             first_table_context['totalWorkersE'] += worker.number_at_workplace
             first_table_context['totalWomanE'] += worker.woman
             first_table_context['totalMinorE'] += worker.minors
             first_table_context['totalDisabledE'] += worker.disabled
         if worker.summary_info == 'D (Приемлемый (допустимый) риск)':
+            first_table_context['totalD'] += worker.number_at_workplace
             first_table_context['totalWorkersD'] += worker.number_at_workplace
             first_table_context['totalWomanD'] += worker.woman
             first_table_context['totalMinorD'] += worker.minors
             first_table_context['totalDisabledD'] += worker.disabled
         if worker.summary_info == 'C (Средний (существенный) риск)':
+            first_table_context['totalC'] += worker.number_at_workplace
             first_table_context['totalWorkersC'] += worker.number_at_workplace
             first_table_context['totalWomanC'] += worker.woman
             first_table_context['totalMinorC'] += worker.minors
             first_table_context['totalDisabledC'] += worker.disabled
         if worker.summary_info == 'B (Высокий риск)':
+            first_table_context['totalB'] += worker.number_at_workplace
             first_table_context['totalWorkersB'] += worker.number_at_workplace
             first_table_context['totalWomanB'] += worker.woman
             first_table_context['totalMinorB'] += worker.minors
             first_table_context['totalDisabledB'] += worker.disabled
         if worker.summary_info == 'A (Крайне высокий риск)':
+            first_table_context['totalA'] += worker.number_at_workplace
             first_table_context['totalWorkersA'] += worker.number_at_workplace
             first_table_context['totalWomanA'] += worker.woman
             first_table_context['totalMinorA'] += worker.minors
@@ -193,7 +219,8 @@ def generate_report(
     comission = []
     for com_member in org_data.com_members:
         comission.append({
-            "name": com_member.full_name
+            "name": com_member.full_name,
+            "pos": com_member.position
         })
 
     context = {
