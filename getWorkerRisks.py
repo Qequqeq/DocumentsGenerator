@@ -51,4 +51,4 @@ def get_worker_risks(workName, org_dangers: list[DangerTemplate], risk_inputs: d
             workName.workerDangers.append(cur_danger)
             work_total += ttl
     workName.workerTotal = work_total
-    workName.summary_info = get_summary_info_aplication(work_total)
+    workName.summary_info = get_summary_info(work_total)

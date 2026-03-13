@@ -20,8 +20,8 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
                     "kef": str(risk_tpl.coefficient).replace('.', ','),
                     "kef_info": risk_tpl.coefficient_info,
                     "sum": f"{risk_tpl.summary:.1f}".replace('.', ','),
-                    "total_let": f"{get_summary_info(summary=risk_tpl.summary)[:1]}",
-                    "total_text": f"{get_summary_info(summary=risk_tpl.summary)[2:]}"
+                    "total_let": f"{get_summary_info_aplication(summary=risk_tpl.summary)[:1]}",
+                    "total_text": f"{get_summary_info_aplication(summary=risk_tpl.summary)[2:]}"
                 })
             danger_groups_list.append({
                 "group_id": danger_tpl.danger_number,
