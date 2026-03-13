@@ -2018,12 +2018,41 @@ COEFF_INFO: Dict[float, str] = {
     0.9: 'Постоянно ( От 75% и более рабочего времени)'
 } # пара коэффициент - время воздействия
 SUMMARY_INFO: Dict[float, str] = {
+    9.9: 'E (Пренебрежительно малый риск)',
+    14.9: 'D (Приемлемый (допустимый) риск)',
+    19.9: 'C (Средний (существенный) риск)',
+    24.9: 'B (Высокий риск)',
+    25: 'A (Крайне высокий риск)'
+} # пара суммарный риск - его описание
+SUMMARY_INFO_APLICATION: Dict[float, str] = {
     4.6: 'E (Пренебрежительно малый риск)',
     9.2: 'D (Приемлемый (допустимый) риск)',
     13.8: 'C (Средний (существенный) риск)',
     18.7: 'B (Высокий риск)',
     22.5: 'A (Крайне высокий риск)'
 } # пара суммарный риск - его описание
+
+def get_summary_info(summary):
+    if summary <= 9.9:
+        return SUMMARY_INFO[9.9]
+    if summary <= 14.9:
+        return SUMMARY_INFO[14.9]
+    if summary <= 19.9:
+        return SUMMARY_INFO[19.9]
+    if summary <= 24.9:
+        return SUMMARY_INFO[24.9]
+    return SUMMARY_INFO[25]
+
+def get_summary_info_aplication(summary):
+    if summary <= 4.6:
+        return SUMMARY_INFO[4.6]
+    if summary <= 9.2:
+        return SUMMARY_INFO[9.2]
+    if summary <= 13.8:
+        return SUMMARY_INFO[13.8]
+    if summary <= 18.7:
+        return SUMMARY_INFO[18.7]
+    return SUMMARY_INFO[22.5]
 CONTROL_INFO: Dict[str, str] = {
     'E (Пренебрежительно малый риск)': 'Ослабленный контроль проводится с периодичностью 1 раз в 5 лет',
     'D (Приемлемый (допустимый) риск)': 'Нормальный контроль проводится с периодичностью 1 раз в 3 года',
