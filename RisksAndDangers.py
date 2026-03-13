@@ -2045,14 +2045,14 @@ def get_summary_info(summary):
 
 def get_summary_info_aplication(summary):
     if summary <= 4.6:
-        return SUMMARY_INFO[4.6]
+        return SUMMARY_INFO_APLICATION[4.6]
     if summary <= 9.2:
-        return SUMMARY_INFO[9.2]
+        return SUMMARY_INFO_APLICATION[9.2]
     if summary <= 13.8:
-        return SUMMARY_INFO[13.8]
+        return SUMMARY_INFO_APLICATION[13.8]
     if summary <= 18.7:
-        return SUMMARY_INFO[18.7]
-    return SUMMARY_INFO[22.5]
+        return SUMMARY_INFO_APLICATION[18.7]
+    return SUMMARY_INFO_APLICATION[22.5]
 CONTROL_INFO: Dict[str, str] = {
     'E (Пренебрежительно малый риск)': 'Ослабленный контроль проводится с периодичностью 1 раз в 5 лет',
     'D (Приемлемый (допустимый) риск)': 'Нормальный контроль проводится с периодичностью 1 раз в 3 года',
