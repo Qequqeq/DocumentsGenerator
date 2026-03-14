@@ -513,10 +513,10 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
     print(f"Сгенерирована карта для: {worker.position}")
 
     next_idx = worker_idx + 1
-    if next_idx < len(workers):
-        return RedirectResponse(url=f"/worker_risks/{job_id}/{next_idx}", status_code=303)
-    else:
-        return RedirectResponse(url=f"/select-dangers?job_id={job_id }", status_code=303)
+    #if next_idx < len(workers):
+    #    return RedirectResponse(url=f"/worker_risks/{job_id}/{next_idx}", status_code=303)
+    #else:
+    return RedirectResponse(url=f"/select-dangers?job_id={job_id }", status_code=303)
 
 @router.post("/apply-template/{job_id}/{worker_idx}")
 async def apply_template(
