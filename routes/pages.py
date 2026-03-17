@@ -34,6 +34,15 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR_SEC.mkdir(parents=True, exist_ok=True)
 
 
+def safe_filename(name: str) -> str:
+    safe = re.sub(r'[^a-zA-Z0-9_.-]', '_', name)
+    safe = re.sub(r'_+', '_', safe)
+    safe = safe.strip('._')
+    if not safe or safe == '.':
+        safe = 'WorkerTemplate'
+    return safe
+
+
 @router.get("/")
 def main_menu(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -448,12 +457,12 @@ async def save_as_template(request: Request, job_id: str, worker_idx: int):
             print(f"Ошибка парсинга {key}: {e}")
 
     template_data = {
-        "template_name": translit(worker.position),
+        "template_name": safe_filename(translit(worker.position)),
         "risks": inputs
     }
 
     json_str = json.dumps(template_data, ensure_ascii=False, indent=2)
-    filename = f"{translit(worker.position)}_template.json".replace(" ", "_")
+    filename = f"{safe_filename(translit(worker.position))}_template.json".replace(" ", "_")
 
     return Response(
         content=json_str,
@@ -511,11 +520,6 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
     job["generated_cards"].add(worker.position)
 
     print(f"Сгенерирована карта для: {worker.position}")
-
-    next_idx = worker_idx + 1
-    #if next_idx < len(workers):
-    #    return RedirectResponse(url=f"/worker_risks/{job_id}/{next_idx}", status_code=303)
-    #else:
     return RedirectResponse(url=f"/select-dangers?job_id={job_id }", status_code=303)
 
 @router.post("/apply-template/{job_id}/{worker_idx}")
@@ -606,11 +610,11 @@ async def save_project(request: Request, job_id: str):
             continue
 
         template_data = {
-            "template_name": position,
+            "template_name": safe_filename(position),
             "risks": inputs
         }
 
-        filename = sanitize_filename(position) + ".json"
+        filename = safe_filename(sanitize_filename(position)) + ".json"
         file_path = temp_dir / filename
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(template_data, f, ensure_ascii=False, indent=2)
@@ -626,7 +630,7 @@ async def save_project(request: Request, job_id: str):
             zf.write(file_path, arcname=file_path.name)
 
     shutil.rmtree(temp_dir, ignore_errors=True)
-    org_name = sanitize_filename(job["org_data"].full_name)
+    org_name = safe_filename(sanitize_filename(job["org_data"].full_name))
     zip_buffer.seek(0)
     try:
         return Response(
