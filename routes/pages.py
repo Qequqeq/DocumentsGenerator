@@ -40,6 +40,8 @@ def safe_filename(name: str) -> str:
     safe = safe.strip('._')
     if not safe or safe == '.':
         safe = 'WorkerTemplate'
+    if len(safe) > 100:
+        safe = safe[:100]
     return safe
 
 
@@ -192,11 +194,12 @@ async def upload_project(
     workers = job["people_data"]
 
     def find_worker(position):
+        ans = []
         for w in workers:
             pos = w.position if hasattr(w, 'position') else w.get('position')
-            if pos == position:
-                return w
-        return None
+            if pos == position or pos.strip() == position.strip():
+                ans.append(w)
+        return ans
 
     for json_file in extract_dir.glob("*.json"):
         try:
@@ -207,55 +210,60 @@ async def upload_project(
             if not position:
                 position = json_file.stem
 
-            worker = find_worker(position)
+            workersdd = find_worker(position)
 
-            if not worker:
+            if not workersdd:
                 print(f"Предупреждение: работник с должностью '{position}' не найден. Пропускаем.")
                 continue
 
-            risks_data = template_data.get("risks", {})
-            if not risks_data:
-                continue
+            for worker in workersdd:
+                risks_data = template_data.get("risks", {})
+                if not risks_data:
+                    continue
 
-            inputs = {}
-            for d_key, r_dict in risks_data.items():
-                try:
-                    d_id = int(d_key)
-                except ValueError:
+                inputs = {}
+                for d_key, r_dict in risks_data.items():
                     try:
-                        d_id = int(float(d_key))
-                    except (ValueError, TypeError):
-                        continue
-                inputs[d_id] = {}
-                for r_key, values in r_dict.items():
-                    inputs[d_id][r_key] = {
-                        "deg": values.get("deg", 1),
-                        "ch": values.get("ch", 1),
-                        "kef": values.get("kef", 0.0)
-                    }
+                        d_id = int(d_key)
+                    except ValueError:
+                        try:
+                            d_id = int(float(d_key))
+                        except (ValueError, TypeError):
+                            continue
+                    inputs[d_id] = {}
+                    for r_key, values in r_dict.items():
+                        inputs[d_id][r_key] = {
+                            "deg": values.get("deg", 1),
+                            "ch": values.get("ch", 1),
+                            "kef": values.get("kef", 0.0)
+                        }
 
 
-            job["risk_inputs"][position] = inputs
+                job["risk_inputs"][position] = inputs
+                job["risk_inputs"][worker.ID] = inputs
 
-            output_dir = UPLOAD_DIR / job_id / "output"
-            output_dir.mkdir(exist_ok=True)
+                output_dir = UPLOAD_DIR / job_id / "output"
+                output_dir.mkdir(exist_ok=True)
 
-            get_worker_risks(worker, job["org_dangers"], inputs)
+                get_worker_risks(worker, job["org_dangers"], inputs)
 
-            generate_worker_card(
-                template_path=job["card_template_path"],
-                doc_date=job["doc_date"],
-                org_data=job["org_data"],
-                workName=worker,
-                output_dir=output_dir
-            )
+                generate_worker_card(
+                    template_path=job["card_template_path"],
+                    doc_date=job["doc_date"],
+                    org_data=job["org_data"],
+                    workName=worker,
+                    output_dir=output_dir
+                )
 
-            job["generated_cards"].add(position)
+                job["generated_cards"].add(position)
 
         except Exception as e:
             print(f"Ошибка при обработке файла {json_file}: {e}")
             continue
-
+    for worker in workers:
+        inputs = job["risk_inputs"].get(worker.ID)
+        if inputs:
+            get_worker_risks(worker, job["org_dangers"], inputs)
     shutil.rmtree(extract_dir, ignore_errors=True)
     if zip_path.exists():
         zip_path.unlink()
@@ -361,6 +369,7 @@ async def select_dangers(
     job["org_dangers"] = get_org_dangers(job["selected_danger_ids"])
 
     job["generated_cards"] = set()
+    job["risk_inputs"] = {}
 
     return templates.TemplateResponse(
         "select_worker_risks.html",
@@ -457,12 +466,13 @@ async def save_as_template(request: Request, job_id: str, worker_idx: int):
             print(f"Ошибка парсинга {key}: {e}")
 
     template_data = {
-        "template_name": safe_filename(translit(worker.position)),
+        "template_name": safe_filename(translit(worker.position)).replace(" ", "_"),
+        "worker_id": worker.ID,
         "risks": inputs
     }
 
     json_str = json.dumps(template_data, ensure_ascii=False, indent=2)
-    filename = f"{safe_filename(translit(worker.position))}_template.json".replace(" ", "_")
+    filename = (f"{safe_filename(translit(worker.position))}_template.json").replace(" ", "_")
 
     return Response(
         content=json_str,
@@ -504,6 +514,8 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
             print(f"Ошибка парсинга {key}: {e}")
 
     job["risk_inputs"][worker.position] = inputs
+    job["risk_inputs"][worker.ID] = inputs
+    job["generated_cards"].add(worker.ID)
 
     output_dir = UPLOAD_DIR / job_id / "output"
     output_dir.mkdir(exist_ok=True)
@@ -565,11 +577,12 @@ async def apply_template(
             }
 
     job["risk_inputs"][worker.position] = inputs
-
+    job["risk_inputs"][worker.ID] = inputs
+    job["generated_cards"].add(worker.ID)
+    get_worker_risks(worker, job["org_dangers"], inputs)
     output_dir = UPLOAD_DIR / job_id / "output"
     output_dir.mkdir(exist_ok=True)
 
-    get_worker_risks(worker, job["org_dangers"], inputs)
     generate_worker_card(
         template_path=job["card_template_path"],
         doc_date=job["doc_date"],
@@ -610,7 +623,7 @@ async def save_project(request: Request, job_id: str):
             continue
 
         template_data = {
-            "template_name": safe_filename(position),
+            "template_name": position,
             "risks": inputs
         }
 
