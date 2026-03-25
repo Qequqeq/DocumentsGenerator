@@ -1,4 +1,5 @@
 from docxtpl import DocxTemplate
+import re
 from getWorkerRisks import *
 from RisksAndDangers import *
 from pathlib import Path
@@ -62,7 +63,13 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
             'division': workName.division
         }
         doc.render(context)
-        doc.save(output_dir / f'Карта{workName.ID}{workName.position}.docx')
+        safe_position = re.sub(r'[\\/*?:"<>|]', '', workName.position)
+        safe_position = ' '.join(safe_position.split())
+        max_len = 100
+        if len(safe_position) > max_len:
+            safe_position = safe_position[:max_len].rstrip()
+        filename = f"Карта{workName.ID}{safe_position}.docx"
+        doc.save(output_dir / filename)
 
 
 def generate_report(
