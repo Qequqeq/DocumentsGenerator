@@ -392,7 +392,7 @@ def worker_risks_form(request: Request, job_id: str, worker_idx: int):
 
     worker = workers[worker_idx]
     org_dangers = job["org_dangers"]
-    saved_inputs = job["risk_inputs"].get(worker.position, {})
+    saved_inputs = job["risk_inputs"].get(worker.ID, {})
 
     existing = {}
     for danger in org_dangers:
@@ -513,7 +513,6 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
         except Exception as e:
             print(f"Ошибка парсинга {key}: {e}")
 
-    job["risk_inputs"][worker.position] = inputs
     job["risk_inputs"][worker.ID] = inputs
     job["generated_cards"].add(worker.ID)
 
@@ -576,7 +575,7 @@ async def apply_template(
                 "kef": values.get("kef", 0.0)
             }
 
-    job["risk_inputs"][worker.position] = inputs
+
     job["risk_inputs"][worker.ID] = inputs
     job["generated_cards"].add(worker.ID)
     get_worker_risks(worker, job["org_dangers"], inputs)
@@ -627,7 +626,7 @@ async def save_project(request: Request, job_id: str):
             "risks": inputs
         }
 
-        filename = safe_filename(sanitize_filename(position)) + ".json"
+        filename = safe_filename(sanitize_filename(position)) + f"{worker.ID}.json"
         file_path = temp_dir / filename
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(template_data, f, ensure_ascii=False, indent=2)
