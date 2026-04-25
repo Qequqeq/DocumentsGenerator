@@ -35,7 +35,12 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
             comission.append({
                 "name": com_member.full_name
             })
-
+        stop_idx = len(danger_groups_list)
+        for i in range(1, len(danger_groups_list)):
+            if danger_groups_list[i]["group_id"] == 1:
+                stop_idx = i
+                break
+        danger_groups_list = danger_groups_list[:stop_idx]
         context = {
             'organizationName': org_data.full_name,
             'organizationAdres': org_data.adres,
