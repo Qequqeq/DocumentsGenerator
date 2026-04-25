@@ -201,6 +201,13 @@ async def upload_project(
                 ans.append(w)
         return ans
 
+    def find_using_ID(ID):
+        ans = []
+        for w in workers:
+            id = w.ID if hasattr(w, 'ID') else w.get('ID')
+            if ID == id:
+                ans.append(w)
+
     for json_file in extract_dir.glob("*.json"):
         try:
             with open(json_file, "r", encoding="utf-8") as f:
@@ -255,7 +262,7 @@ async def upload_project(
                     output_dir=output_dir
                 )
 
-                job["generated_cards"].add(position)
+                job["generated_cards"].add(worker.ID)
 
         except Exception as e:
             print(f"Ошибка при обработке файла {json_file}: {e}")
@@ -590,7 +597,7 @@ async def apply_template(
         output_dir=output_dir
     )
 
-    job["generated_cards"].add(worker.position)
+    job["generated_cards"].add(worker.ID)
     return RedirectResponse(url=f"/select-dangers?job_id={job_id}", status_code=303)
 
 def sanitize_filename(name: str) -> str:
@@ -617,7 +624,8 @@ async def save_project(request: Request, job_id: str):
         if not position:
             continue
 
-        inputs = risk_inputs.get(position, {})
+        inputs = risk_inputs.get(worker.ID, {})
+
         if not inputs:
             continue
 
