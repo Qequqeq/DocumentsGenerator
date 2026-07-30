@@ -128,8 +128,8 @@ def parce_org_data(org_path='', workers_list=None):
                 full_name= tpl[1]
             )
         )
-    if chairman.full_name == chairmen[0].full_name:
-        chairmen = chairmen[1:]
+    #if chairman.full_name == chairmen[0].full_name:
+    #    chairmen = chairmen[1:]
 
     org = Organization(
         full_name= full_name,
