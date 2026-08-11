@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from models import *
 
 import pandas as pd
@@ -27,7 +26,8 @@ def parce_people_data(person_path=''):
     div = []
     level = []
     for _, row in df.iterrows():
-        if str(row.iloc[0]) in alph:
+        val = row.iloc[0]
+        if isinstance(val, str) and val in alph:
             if not level:
                 level.append(str(row.iloc[0]))
                 div.append(str(row.iloc[2]))
@@ -39,9 +39,27 @@ def parce_people_data(person_path=''):
                 div.append(str(row.iloc[2]))
                 level.append(str(row.iloc[0]))
         else:
+            worker_id = None
+            if pd.notna(val):
+                if val == 0:
+                    worker_id = worker_number
+                    worker_number += 1
+                else:
+                    try:
+                        if isinstance(val, str):
+                            clean_val = val.strip()
+                            if clean_val != '':
+                                worker_id = float(clean_val)
+                        else:
+                            worker_id = float(val)
+                    except (ValueError, TypeError):
+                        pass
+                    if worker_id == int(worker_id):
+                        worker_id = int(worker_id)
+
             workers.append(
                 WorkName(
-                    ID = worker_number,
+                    ID = worker_id,
                     position= str(row.iloc[1].strip()),
                     division=div,
                     number_at_workplace=int(row.iloc[2]),
@@ -55,7 +73,6 @@ def parce_people_data(person_path=''):
                     summary_info=''
                 )
             )
-            worker_number += 1
             positions.append(str(row.iloc[1].strip()))
     return workers
 

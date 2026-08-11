@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from parser import parce_people_data, parce_org_data
 import json
 from pathlib import Path

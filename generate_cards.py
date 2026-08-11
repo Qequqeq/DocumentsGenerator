@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from docxtpl import DocxTemplate
 import re
 from getWorkerRisks import *
@@ -76,6 +75,7 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
             safe_position = safe_position[:max_len].rstrip()
         filename = f"Карта{workName.ID}{safe_position}.docx"
         doc.save(output_dir / filename)
+        print(f"Сгенерирована карта {workName.ID}{safe_position}")
 
 
 def generate_report(
