@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from os.path import curdir
 
 from models import *

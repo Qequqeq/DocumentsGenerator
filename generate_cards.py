@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from docxtpl import DocxTemplate
 import re
 from getWorkerRisks import *

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI
 from routes import pages
