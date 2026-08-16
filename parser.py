@@ -1,3 +1,5 @@
+from os.path import curdir
+
 from models import *
 
 import pandas as pd
@@ -9,6 +11,23 @@ def make_person(person_data):
     person_pos = person_data[0]
     person_name = person_data[1]
     return person_pos, person_name
+
+def check_chairmen_text(arr):
+    merged = []
+    i = 0
+    while i < len(arr):
+        cur = arr[i].strip()
+        if '@' in cur:
+            merged.append(cur)
+            i += 1
+        else:
+            combined = cur
+            i += 1
+            while i < len(arr) and '@' not in combined:
+                combined += ', ' + arr[i].strip()
+                i += 1
+            merged.append(combined)
+    return merged
 
 def parce_people_data(person_path=''):
     worker_number = 1
@@ -121,6 +140,8 @@ def parce_org_data(org_path='', workers_list=None):
     leader_text = str(df.iloc[9, 1])
     chairman_text = str(df.iloc[10, 1])
     chairmen_text = str(df.iloc[11, 1]).split(',')
+    chairmen_text = check_chairmen_text(chairmen_text)
+
 
     lead_typle = make_person(leader_text)
     leader = Chairman(
@@ -135,6 +156,7 @@ def parce_org_data(org_path='', workers_list=None):
 
 
     chairmen_typle = []
+    print(chairmen_text)
     for man in chairmen_text:
         chairmen_typle.append(make_person(man))
 
