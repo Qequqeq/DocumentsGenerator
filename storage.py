@@ -12,10 +12,11 @@ def save_job(
     rep_template_path,
     people_path,
     org_path,
-    doc_date
+    doc_date,
+    org_df
 ):
     people_data = parce_people_data(people_path)
-    org_data = parce_org_data(org_path, people_data)
+    org_data = parce_org_data(org_path, people_data, org_df)
 
     _JOBS[job_id] = {
         "card_template_path": card_template_path,

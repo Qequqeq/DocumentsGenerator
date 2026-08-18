@@ -112,16 +112,19 @@ def find_worker_in_text(text: str, workers: List[WorkName]) -> Optional[WorkName
     return None
 
 
-def parce_org_data(org_path='', workers_list=None):
-    if org_path == '':
-        organization_path = path.Path(input("Введите путь к организации: "))
-    else:
-        organization_path = org_path
+def parce_org_data(org_path='', workers_list=None, data_frame=pd.DataFrame()):
+    df = None
+    if data_frame.empty:
+        if org_path == '':
+            organization_path = path.Path(input("Введите путь к организации: "))
+        else:
+            organization_path = org_path
 
-    df = pd.read_excel(organization_path, header=0)
+        df = pd.read_excel(organization_path, header=0)
+    else:
+        df = data_frame
     df = df.dropna(how="all")
     df.drop(df.columns[0], axis=1, inplace=True)
-
     def get_val(row_idx):
         val = df.iloc[row_idx, 1]
         if pd.isna(val):

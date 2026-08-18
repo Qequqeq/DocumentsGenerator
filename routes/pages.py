@@ -159,6 +159,19 @@ async def upload_project(
         with open(path, "wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
 
+    is_org_valid, org_errors, df_org = validate_org_file(org_path)
+    if not is_org_valid:
+        if org_path.exists():
+            org_path.unlink()
+        return templates.TemplateResponse(
+            "upload_project.html",
+            {
+                "request": request,
+                "default_date": doc_date,
+                "errors": org_errors
+            }
+        )
+
     save_job(
         job_id=job_id,
         card_template_path=card_template_path,
@@ -166,6 +179,7 @@ async def upload_project(
         people_path=people_path,
         org_path=org_path,
         doc_date=doc_date,
+        org_df=df_org
     )
 
     job = load_job(job_id)
@@ -333,9 +347,9 @@ async def upload_files(
             shutil.copyfileobj(upload.file, buffer)
 
     is_org_valid, org_errors, df_org = validate_org_file(org_path)
-    print(is_org_valid, org_errors, df_org)
     if not is_org_valid:
-        shutil.rmtree(job_dir, ignore_errors=True)
+        if org_path.exists():
+            org_path.unlink()
         return templates.TemplateResponse(
             "form.html",
             {
@@ -352,6 +366,7 @@ async def upload_files(
         people_path=people_path,
         org_path=org_path,
         doc_date=doc_date,
+        org_df = df_org
     )
 
     job = load_job(job_id)
