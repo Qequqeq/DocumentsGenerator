@@ -24,6 +24,7 @@ from parser import translit
 import re
 import io
 from pathlib import Path
+from validator import validate_org_file
 
 router = APIRouter()
 
@@ -330,6 +331,19 @@ async def upload_files(
     ]:
         with open(path, "wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
+
+    is_org_valid, org_errors, df_org = validate_org_file(org_path)
+    print(is_org_valid, org_errors, df_org)
+    if not is_org_valid:
+        shutil.rmtree(job_dir, ignore_errors=True)
+        return templates.TemplateResponse(
+            "form.html",
+            {
+                "request": request,
+                "default_date": doc_date,
+                "errors": org_errors
+            }
+        )
 
     save_job(
         job_id=job_id,

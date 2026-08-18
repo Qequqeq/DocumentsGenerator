@@ -157,7 +157,6 @@ def parce_org_data(org_path='', workers_list=None):
 
 
     chairmen_typle = []
-    print(chairmen_text)
     for man in chairmen_text:
         chairmen_typle.append(make_person(man))
 
@@ -169,8 +168,6 @@ def parce_org_data(org_path='', workers_list=None):
                 full_name= tpl[1]
             )
         )
-    #if chairman.full_name == chairmen[0].full_name:
-    #    chairmen = chairmen[1:]
 
     org = Organization(
         full_name= full_name,
