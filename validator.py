@@ -72,3 +72,86 @@ def validate_org_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.Dat
         return False, errors, None
 
     return True, [], df
+
+def validate_people_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.DataFrame]]:
+    errors = []
+    try:
+        df = pd.read_excel(file_path, header=0)
+    except Exception as e:
+        errors.append(
+            f"Не удалось прочитать файл Excel: {str(e)}")
+        return False, errors, None
+
+    if df.shape[1] != 8:
+        errors.append(
+            f"Файл с сотрудниками должен содержать 8 столбцов. Найдено {df.shape[1]} столбцов, смотрите шаблон.")
+    if errors:
+        return False, errors, None
+
+    expected_columns = [
+        "№ п/п (№ рабочего места, по ранее проведенной СОУТ/АРМ))",
+        "Наименование профессии или должности (специальности)",
+        "Количество работающих на рабочем месте",
+        "Из них женщин",
+        "Из них несовершеннолетних",
+        "Из них инвалидов",
+        "Используемое оборудование",
+        "Применяемые сырье и материалы"
+    ]
+    for i, expected_col in enumerate(expected_columns):
+        actual_col = str(df.columns[i]).strip()
+        if actual_col != expected_col:
+            errors.append(f"Название столбца {i + 1} не соответствует шаблону. Ожидается: \"{expected_col}\", найдено: \"{actual_col}\".")
+    if errors:
+        return False, errors, None
+
+    worker_ids = {}
+    alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    cur_number = 1
+    for i, row in enumerate(df.itertuples(index=False)):
+        cur_worker_id = row[0]
+        if pd.isna(cur_worker_id):
+            if isinstance(row[1], str):
+                if cur_number in worker_ids:
+                    errors.append(
+                        f"Повторяется ID сотрудника \"{cur_number}\" в строках "
+                        f"{worker_ids[cur_number] + 2} и {i + 2}."
+                        f"Возможно, это вызвано смешиванием явной и неявной нумерации."
+                    )
+                else:
+                    worker_ids[cur_number] = i
+                cur_number += 1
+                continue
+        clean_id = str(cur_worker_id).strip()
+        if not clean_id:
+            continue
+        if clean_id[0] in alph:
+            for v in clean_id:
+                if v not in alph:
+                    errors.append(
+                        f"Неопознанный символ \"{v}\" в маркере подразделения строки {i + 2}. "
+                        f"Допускаются только заглавные латинские буквы."
+                    )
+        else:
+            try:
+                worker_id = float(clean_id)
+                if worker_id == int(worker_id):
+                    worker_id = int(worker_id)
+                if worker_id in worker_ids:
+                    errors.append(
+                        f"Повторяется ID сотрудника \"{worker_id}\" в строках "
+                        f"{worker_ids[worker_id] + 2} и {i + 2}."
+                        f"Возможно, это вызвано смешиванием явной и неявной нумерации."
+                    )
+                else:
+                    worker_ids[worker_id] = i
+            except (ValueError, TypeError):
+                errors.append(
+                    f"Некорректный ID сотрудника \"{cur_worker_id}\" в строке {i + 2}. "
+                    f"Ожидается число или маркер подразделения (заглавные латинские буквы)."
+                )
+
+    if errors:
+        return False, errors, None
+
+    return True, [], df

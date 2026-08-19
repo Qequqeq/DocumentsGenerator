@@ -30,15 +30,20 @@ def check_chairmen_text(arr):
             merged.append(combined)
     return merged
 
-def parce_people_data(person_path=''):
+def parce_people_data(person_path='', data_frame=pd.DataFrame()):
+    df = None
+    if data_frame.empty:
+        if person_path == '':
+            organization_path = path.Path(input("Введите путь к организации: "))
+        else:
+            organization_path = person_path
+
+        df = pd.read_excel(organization_path, header=0)
+    else:
+        df = data_frame
     worker_number = 1
     alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    if person_path == '':
-        people_path = path.Path(input("Введите путь к людям: "))
-    else:
-        people_path = person_path
 
-    df = pd.read_excel(people_path, header=0)
     df = df.fillna(int(0))
 
     workers: list[WorkName] = []
@@ -47,7 +52,7 @@ def parce_people_data(person_path=''):
     level = []
     for _, row in df.iterrows():
         val = row.iloc[0]
-        if isinstance(val, str) and val in alph:
+        if isinstance(val, str) and val[0] in alph:
             if not level:
                 level.append(str(row.iloc[0]))
                 div.append(str(row.iloc[2]))

@@ -13,9 +13,10 @@ def save_job(
     people_path,
     org_path,
     doc_date,
-    org_df
+    org_df,
+    people_df
 ):
-    people_data = parce_people_data(people_path)
+    people_data = parce_people_data(people_path, people_df)
     org_data = parce_org_data(org_path, people_data, org_df)
 
     _JOBS[job_id] = {

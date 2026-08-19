@@ -12,13 +12,13 @@
 
 {% if errors %}
 <div style="background-color: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-family: sans-serif;">
-    <h3 style="margin-top: 0; font-weight: bold;">Ошибки в файле организации:</h3>
+    <h3 style="margin-top: 0; font-weight: bold;">Ошибки в загруженных файлах:</h3>
     <ul style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
         {% for error in errors %}
             <li style="margin-bottom: 8px;">{{ error }}</li>
         {% endfor %}
     </ul>
-    <p style="margin-top: 15px; font-size: 14px;">Пожалуйста, исправьте файл согласно шаблону и попробуйте загрузить снова.</p>
+    <p style="margin-top: 15px; font-size: 14px;">Пожалуйста, исправьте файлы согласно шаблону и попробуйте загрузить снова.</p>
 </div>
 {% endif %}
 

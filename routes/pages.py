@@ -24,7 +24,7 @@ from parser import translit
 import re
 import io
 from pathlib import Path
-from validator import validate_org_file
+from validator import validate_org_file, validate_people_file
 
 router = APIRouter()
 
@@ -158,7 +158,18 @@ async def upload_project(
     ]:
         with open(path, "wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
-
+    is_people_valid, people_errors, df_people = validate_people_file(people_path)
+    if not is_people_valid:
+        if people_path.exists():
+            people_path.unlink()
+        return templates.TemplateResponse(
+            "upload_project.html",
+            {
+                "request": request,
+                "default_date": doc_date,
+                "errors": people_errors
+            }
+        )
     is_org_valid, org_errors, df_org = validate_org_file(org_path)
     if not is_org_valid:
         if org_path.exists():
@@ -179,7 +190,8 @@ async def upload_project(
         people_path=people_path,
         org_path=org_path,
         doc_date=doc_date,
-        org_df=df_org
+        org_df=df_org,
+        people_df=df_people
     )
 
     job = load_job(job_id)
@@ -346,6 +358,19 @@ async def upload_files(
         with open(path, "wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
 
+    is_people_valid, people_errors, df_people = validate_people_file(people_path)
+    if not is_people_valid:
+        if people_path.exists():
+            people_path.unlink()
+        return templates.TemplateResponse(
+            "form.html",
+            {
+                "request": request,
+                "default_date": doc_date,
+                "errors": people_errors
+            }
+        )
+
     is_org_valid, org_errors, df_org = validate_org_file(org_path)
     if not is_org_valid:
         if org_path.exists():
@@ -366,7 +391,8 @@ async def upload_files(
         people_path=people_path,
         org_path=org_path,
         doc_date=doc_date,
-        org_df = df_org
+        org_df = df_org,
+        people_df=df_people
     )
 
     job = load_job(job_id)
