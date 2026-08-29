@@ -7,7 +7,10 @@
 <p>Выберите работника для заполнения рисков или загрузите готовый шаблон.</p>
 
 {% for worker in workers %}
-<div style="margin-bottom: 1.5em; padding: 1em; border: 1px solid #dee2e6; border-radius: 6px; background: #f8f9fa; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5em;">
+<div class="worker-card"
+     data-position="{{ worker.position }}"
+     data-completed="{% if worker.workerTotal != 0 %}true{% else %}false{% endif %}"
+     style="margin-bottom: 1.5em; padding: 1em; border: 1px solid #dee2e6; border-radius: 6px; background: #f8f9fa; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5em;">
     <div style="flex: 2; min-width: 250px;">
         <strong>{{ worker.position }}</strong><br>
         <span style="color: #6c757d;">{{ worker.full_name }}</span>
@@ -32,10 +35,25 @@
 </div>
 {% endfor %}
 
+{% if error_message %}
+<div id="errorBlock" style="background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin-top: 0; font-weight: bold;">Невозможно сформировать отчёт.</h3>
+    <p style="margin-bottom: 10px;">{{ error_message }}</p>
+</div>
+{% endif %}
+
+<div id="errorBlock" style="display: none; background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin-top: 0; font-weight: bold;">Невозможно сформировать отчёт.</h3>
+    <p style="margin-bottom: 10px;">Следующие карты не заполнены:</p>
+    <ul id="uncompletedList" style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
+    </ul>
+    <p style="margin-top: 15px; font-size: 14px;">Пожалуйста, заполните все карты перед генерацией отчёта.</p>
+</div>
+
 <div style="margin-top: 2em;">
-    <a href="/generate/{{ job_id }}" class="btn">Сформировать все отчёты</a>
-    <a href="/" class="btn" style="background: #95a5a6;">В главное меню</a>
-    <a href="/save-project/{{ job_id }}" class="btn">Сохранить проект</a>
+    <a href="#" id="generateBtn" class="btn" onclick="checkBeforeGenerate(event)">Сформировать все отчёты</a>
+    <a href="/" class="btn" style="background: #95a5a6;" onclick="localStorage.removeItem('scrollPosition');">В главное меню</a>
+    <a href="/save-project/{{ job_id }}" class="btn" onclick="localStorage.removeItem('scrollPosition');">Сохранить проект</a>
 </div>
 <script>
 document.addEventListener('click', function(e) {
@@ -57,5 +75,41 @@ window.addEventListener('load', function() {
         }, 100);
     }
 });
+
+function checkBeforeGenerate(event) {
+    event.preventDefault();
+
+    const uncompletedPositions = [];
+    document.querySelectorAll('.worker-card').forEach(card => {
+        const isCompleted = card.getAttribute('data-completed') === 'true';
+        if (!isCompleted) {
+            const position = card.getAttribute('data-position');
+            uncompletedPositions.push(position);
+        }
+    });
+
+    if (uncompletedPositions.length > 0) {
+        const errorBlock = document.getElementById('errorBlock');
+        const list = document.getElementById('uncompletedList');
+
+        list.innerHTML = '';
+
+        uncompletedPositions.forEach(pos => {
+            const li = document.createElement('li');
+            li.textContent = pos;
+            li.style.marginBottom = '8px';
+            list.appendChild(li);
+        });
+
+        errorBlock.style.display = 'block';
+
+        errorBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        return false;
+    } else {
+        sessionStorage.removeItem('scrollPosition');
+        window.location.href = '/generate/{{ job_id }}';
+    }
+}
 </script>
 {% endblock %}
