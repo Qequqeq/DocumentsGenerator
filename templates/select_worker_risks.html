@@ -37,4 +37,25 @@
     <a href="/" class="btn" style="background: #95a5a6;">В главное меню</a>
     <a href="/save-project/{{ job_id }}" class="btn">Сохранить проект</a>
 </div>
+<script>
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('a');
+    if (link && link.href.includes('/worker_risks/')) {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    }
+});
+
+window.addEventListener('load', function() {
+    const savedPosition = sessionStorage.getItem('scrollPosition');
+    if (savedPosition) {
+        setTimeout(function() {
+            window.scrollTo({
+                top: parseInt(savedPosition),
+                behavior: 'smooth'
+            });
+            sessionStorage.removeItem('scrollPosition');
+        }, 100);
+    }
+});
+</script>
 {% endblock %}

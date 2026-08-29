@@ -89,13 +89,6 @@
         Сохранить как шаблон
         </button>
 
-        {% if worker_idx > 0 %}
-        <a href="/worker_risks/{{ job_id }}/{{ worker_idx - 1 }}"
-           class="btn" style="background: #7f8c8d; font-size: 1.1em; padding: 0.8em 1.8em;">
-            Назад
-        </a>
-        {% endif %}
-
         <a href="/select-dangers?job_id={{ job_id }}" class="btn" style="background: #95a5a6; font-size: 1.1em; padding: 0.8em 1.8em;">
             К списку работников
         </a>
