@@ -24,7 +24,7 @@ from parser import translit
 import re
 import io
 from pathlib import Path
-from validator import validate_org_file, validate_people_file
+from validator import validate_org_file, validate_people_file, validate_date
 
 router = APIRouter()
 
@@ -158,28 +158,29 @@ async def upload_project(
     ]:
         with open(path, "wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
+
+    is_date_valid, date_error = validate_date(doc_date)
+    file_errors = []
+
     is_people_valid, people_errors, df_people = validate_people_file(people_path)
     if not is_people_valid:
         if people_path.exists():
             people_path.unlink()
-        return templates.TemplateResponse(
-            "upload_project.html",
-            {
-                "request": request,
-                "default_date": doc_date,
-                "errors": people_errors
-            }
-        )
+        file_errors.extend(people_errors)
+
     is_org_valid, org_errors, df_org = validate_org_file(org_path)
     if not is_org_valid:
         if org_path.exists():
             org_path.unlink()
+        file_errors.extend(org_errors)
+    if not is_date_valid or file_errors:
         return templates.TemplateResponse(
-            "upload_project.html",
+            "form.html",
             {
                 "request": request,
                 "default_date": doc_date,
-                "errors": org_errors
+                "date_error": date_error,
+                "file_errors": file_errors
             }
         )
 
@@ -358,29 +359,28 @@ async def upload_files(
         with open(path, "wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
 
+    is_date_valid, date_error = validate_date(doc_date)
+    file_errors = []
+
     is_people_valid, people_errors, df_people = validate_people_file(people_path)
     if not is_people_valid:
         if people_path.exists():
             people_path.unlink()
-        return templates.TemplateResponse(
-            "form.html",
-            {
-                "request": request,
-                "default_date": doc_date,
-                "errors": people_errors
-            }
-        )
+        file_errors.extend(people_errors)
 
     is_org_valid, org_errors, df_org = validate_org_file(org_path)
     if not is_org_valid:
         if org_path.exists():
             org_path.unlink()
+        file_errors.extend(org_errors)
+    if not is_date_valid or file_errors:
         return templates.TemplateResponse(
             "form.html",
             {
                 "request": request,
                 "default_date": doc_date,
-                "errors": org_errors
+                "date_error": date_error,
+                "file_errors": file_errors
             }
         )
 

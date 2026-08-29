@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from typing import Tuple, List, Optional
+from datetime import datetime
 
 
 def validate_org_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.DataFrame]]:
@@ -155,3 +156,20 @@ def validate_people_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.
         return False, errors, None
 
     return True, [], df
+
+def validate_date(date_str: str) -> Tuple[bool, Optional[str]]:
+    if not date_str or not date_str.strip():
+        return False, "Дата не может быть пустой."
+    date_str = date_str.strip()
+
+    try:
+        parsed_date = datetime.strptime(date_str, "%d.%m.%Y")
+        current_year = datetime.now().year
+        if parsed_date.year < 2000:
+            return False, f"Год не может быть меньше 2000. Указан год: {parsed_date.year}."
+        if parsed_date.year > current_year + 5:
+            return False, f"Год не может быть больше {current_year + 5}. Указан год: {parsed_date.year}."
+
+        return True, None
+    except ValueError:
+        return False, f"Неверный формат даты. Ожидается ДД.ММ.ГГГГ, вместо: \"{date_str}\"."

@@ -10,15 +10,22 @@
     Загрузите файлы проекта.
 </div>
 
-{% if errors %}
-<div style="background-color: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-family: sans-serif;">
-    <h3 style="margin-top: 0; font-weight: bold;">Ошибки в файле организации:</h3>
+{% if date_error %}
+<div style="background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin-top: 0; font-weight: bold;">Ошибка в дате</h3>
+    <p style="margin-bottom: 0;">{{ date_error }}</p>
+</div>
+{% endif %}
+
+{% if file_errors %}
+<div style="background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin-top: 0; font-weight: bold;">Ошибка при загрузке файлов:</h3>
     <ul style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
-        {% for error in errors %}
+        {% for error in file_errors %}
             <li style="margin-bottom: 8px;">{{ error }}</li>
         {% endfor %}
     </ul>
-    <p style="margin-top: 15px; font-size: 14px;">Пожалуйста, исправьте файл согласно шаблону и попробуйте загрузить снова.</p>
+    <p style="margin-top: 15px; font-size: 14px;">Пожалуйста, исправьте файлы согласно шаблону и попробуйте загрузить снова.</p>
 </div>
 {% endif %}
 
