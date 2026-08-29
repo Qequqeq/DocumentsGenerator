@@ -4,131 +4,206 @@
 
 {% block content %}
 
-<h1>Генерация карт</h1>
+<header class="mb-12">
+    <div class="flex items-center gap-3 mb-4">
+        <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Результат</span>
+    </div>
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Генерация карт</h1>
+    <p class="text-base text-slate-500 max-w-xl">
+        Формирование карт оценки профессиональных рисков и сводного отчёта завершено.
+    </p>
+</header>
 
 {% if error %}
-    <div style="background: #ffebee; padding: 15px; border-left: 5px solid #c62828; margin: 20px 0;">
-        <strong>Ошибка:</strong> {{ error }}
-    </div>
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-red-500 px-5 py-4">
+    <p class="text-sm font-semibold text-slate-900 mb-1">Ошибка при генерации</p>
+    <p class="text-sm text-slate-600">{{ error }}</p>
+</div>
 {% endif %}
 
-<div class="info">
-    Не забудьте сохранить проект!
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-green-500 px-5 py-4">
+    <p class="text-sm font-semibold text-slate-900 mb-1">Готово</p>
+    <p class="text-sm text-slate-600">Карты сформированы и упакованы в архив вместе со сводным отчётом.</p>
 </div>
 
-<div style="text-align: center; margin: 30px 0;">
-    <a href="/save-project/{{ job_id }}" class="btn save-project-btn" id="saveProjectBtn" style="background: #27ae60;">Сохранить проект</a>
+<div class="bg-white border border-slate-200 border-l-4 border-l-amber-500 px-5 py-4 mb-8">
+    <p class="text-sm font-semibold text-slate-900 mb-1">Не забудьте сохранить проект</p>
+    <p class="text-sm text-slate-600">Скачивание карт не сохраняет проект. Чтобы продолжить работу позже, нажмите «Сохранить проект».</p>
 </div>
-{% if zip_ready %}
-    <div style="margin: 40px 0; text-align: center;">
-        <progress id="progress-success" value="100" max="100" style="width: 80%; height: 28px;"></progress>
-        <p style="font-size: 1.4em; margin: 20px 0; color: #27ae60; font-weight: bold;">
-            Карты сформированы и упакованы в архив.
-        </p>
+
+<section class="mb-10">
+    <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+        <span class="text-sm font-bold text-blue-600 tabular-nums">1.</span>
+        <h2 class="text-base font-semibold text-slate-900">Результат работы</h2>
     </div>
+    <p class="text-sm text-slate-500 mb-4">Архив содержит сформированные карты сотрудников и сводный отчёт по организации.</p>
+    <a href="/download/{{ job_id }}"
+       class="inline-block bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+        Скачать карты и отчёт
+    </a>
+</section>
 
-    <div style="text-align: center; margin: 30px 0;">
-        <a href="/download/{{ job_id }}" class="btn download-btn" id="downloadBtn" style="font-size: 1.4em; padding: 1em 2.5em;">
-            Скачать ZIP-архив
+<section class="mb-10">
+    <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+        <span class="text-sm font-bold text-blue-600 tabular-nums">2.</span>
+        <h2 class="text-base font-semibold text-slate-900">Сохранение проекта</h2>
+    </div>
+    <p class="text-sm text-slate-500 mb-4">Архив проекта содержит заполненные риски всех сотрудников. Его можно будет открыть заново нажав «Открыть проект» в главном меню.</p>
+    <div class="flex flex-wrap items-center gap-3">
+        <a href="/save-project/{{ job_id }}" id="saveProjectBtn"
+           class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Сохранить проект
+        </a>
+        <a href="/" id="mainMenuBtn"
+           class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            В главное меню
         </a>
     </div>
+</section>
 
-    <div style="text-align: center; margin-top: 50px;">
-        <button onclick="if(confirm('Закрыть приложение и остановить сервер?')) { window.close(); fetch('/shutdown', {method: 'POST'}); }"
-                style="font-size: 1.6em; padding: 1.2em 3em; background: #c0392b; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-            Завершить работу
-        </button>
-        <p style="margin-top: 12px; color: #7f8c8d; font-size: 1.1em;">
-            (закроет вкладку и попытается остановить сервер)
-        </p>
-    </div>
-{% else %}
-    <div style="margin: 40px 0; text-align: center;">
-        <progress id="progress-loading" value="0" max="100" style="width: 80%; height: 28px;"></progress>
-        <p id="statusText" style="font-size: 1.4em; margin-top: 20px;">
-            Генерация... (это может занять некоторое время)
-        </p>
-    </div>
-
-    <p style="color: #555; text-align: center; font-size: 1.1em;">
-        Пожалуйста подождите...
-    </p>
-
-    <script>
-        let progress = 0;
-        const bar = document.getElementById('progress-loading');
-        const text = document.getElementById('statusText');
-
-        {% if not zip_ready %}
-        const interval = setInterval(() => {
-            progress += Math.random() * 12 + 4;
-            if (progress > 92) progress = 92;
-            bar.value = progress;
-            text.textContent = `Генерация... ${Math.round(progress)}%`;
-        }, 1400);
-        {% endif %}
-    </script>
-{% endif %}
+<div class="pt-8 border-t border-slate-200">
+    <button type="button" id="shutdownBtn"
+            class="bg-white border border-red-300 hover:border-red-500 hover:bg-red-50 text-red-600 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+        Завершить работу
+    </button>
+    <p class="text-xs text-slate-400 mt-3">Закроет вкладку и попытается остановить локальный сервер</p>
+</div>
 
 {% if generated_count and generated_count > 0 %}
-    <h3 style="margin-top: 50px;">Сгенерированные карты:</h3>
-    <ul style="font-size: 1.15em; line-height: 1.6;">
+<section class="mt-12">
+    <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+        <span class="text-sm font-bold text-blue-600 tabular-nums">3.</span>
+        <h2 class="text-base font-semibold text-slate-900">Сгенерированные карты</h2>
+        <span class="text-sm text-slate-400 tabular-nums">{{ generated_count }} шт.</span>
+    </div>
+    <ul class="space-y-1.5">
         {% for worker in workers %}
             {% if worker.workerDangers %}
-                <li>{{ worker.position }}</li>
+            <li class="text-sm text-slate-600 flex gap-2">
+                <span class="text-green-500 font-bold shrink-0">—</span>
+                <span>{{ worker.position }}</span>
+            </li>
             {% endif %}
         {% endfor %}
     </ul>
+</section>
 {% endif %}
+
+<div id="unsavedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(15, 23, 42, 0.6);">
+    <div class="bg-white border border-slate-200 shadow-2xl max-w-md w-full p-8">
+        <div class="mb-6">
+            <div class="w-12 h-12 bg-amber-50 border border-amber-200 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900 mb-2">Проект не сохранён</h3>
+            <p class="text-sm text-slate-600">Скачайте архив проекта, чтобы не потерять результаты работы. После выхода восстановить данные будет невозможно.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <a href="/save-project/{{ job_id }}" id="modalSaveBtn"
+               class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-6 py-3 text-sm uppercase tracking-wide text-center transition-colors">
+                Скачать проект
+            </a>
+            <button type="button" id="modalExitBtn"
+                    class="flex-1 bg-white border border-slate-300 hover:border-red-500 hover:text-red-600 text-slate-700 font-medium px-6 py-3 text-sm uppercase tracking-wide transition-colors">
+                Всё равно выйти
+            </button>
+        </div>
+        <button type="button" id="modalCancelBtn"
+                class="w-full mt-3 text-xs text-slate-400 hover:text-slate-600 uppercase tracking-wide py-2 transition-colors">
+            Отмена
+        </button>
+    </div>
+</div>
 
 <script>
 (function() {
+    var jobId = '{{ job_id }}';
+    var storageKey = 'projectSaved_' + jobId;
 
-    let projectSaved = false;
-
+    var projectSaved = sessionStorage.getItem(storageKey) === 'true';
 
     function markSaved() {
         projectSaved = true;
-        console.log('Project marked as saved');
+        sessionStorage.setItem(storageKey, 'true');
     }
 
+    var saveProjectBtn = document.getElementById('saveProjectBtn');
+    if (saveProjectBtn) {
+        saveProjectBtn.addEventListener('click', markSaved);
+    }
 
-    document.querySelectorAll('.save-project-btn, .download-btn, #saveProjectBtn, #downloadBtn').forEach(btn => {
-        btn.addEventListener('click', markSaved);
-    });
-
+    var modalSaveBtn = document.getElementById('modalSaveBtn');
+    if (modalSaveBtn) {
+        modalSaveBtn.addEventListener('click', markSaved);
+    }
 
     window.addEventListener('beforeunload', function(e) {
-        if (!projectSaved && {{ zip_ready|default(false) }}) {
+        if (!projectSaved) {
             e.preventDefault();
             e.returnValue = '';
         }
     });
 
+    var modal = document.getElementById('unsavedModal');
+    var modalExitBtn = document.getElementById('modalExitBtn');
+    var modalCancelBtn = document.getElementById('modalCancelBtn');
+    var pendingAction = null;
 
-    document.addEventListener('click', function(e) {
+    function showModal(action) {
+        pendingAction = action;
+        modal.classList.remove('hidden');
+    }
 
-        const target = e.target.closest('a, button');
-        if (!target) return;
+    function hideModal() {
+        modal.classList.add('hidden');
+        pendingAction = null;
+    }
 
-        if (target.matches('.save-project-btn, .download-btn, #saveProjectBtn, #downloadBtn')) {
-            return;
+    modalExitBtn.addEventListener('click', function() {
+        if (pendingAction) {
+            var action = pendingAction;
+            hideModal();
+            action();
         }
+    });
 
+    modalCancelBtn.addEventListener('click', hideModal);
 
-        if (!{{ zip_ready|default(false) }}) return;
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            hideModal();
+        }
+    });
 
+    var shutdownBtn = document.getElementById('shutdownBtn');
+    shutdownBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var doShutdown = function() {
+            sessionStorage.removeItem(storageKey);
+            window.close();
+            fetch('/shutdown', { method: 'POST' });
+        };
+        if (!projectSaved) {
+            showModal(doShutdown);
+        } else {
+            doShutdown();
+        }
+    });
 
-        if (projectSaved) return;
-
-        const userConfirmed = confirm('Проект ещё не сохранён. Вы действительно хотите покинуть страницу?');
-        if (!userConfirmed) {
+    var mainMenuBtn = document.getElementById('mainMenuBtn');
+    mainMenuBtn.addEventListener('click', function(e) {
+        var goHome = function() {
+            sessionStorage.removeItem(storageKey);
+            window.location.href = '/';
+        };
+        if (!projectSaved) {
             e.preventDefault();
-            e.stopPropagation();
+            showModal(goHome);
         }
-    }, true);
+    });
 })();
 </script>
-
 
 {% endblock %}

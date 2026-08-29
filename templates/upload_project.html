@@ -1,95 +1,188 @@
 {% extends "base.html" %}
 
-{% block title %}Загрузка данных{% endblock %}
+{% block title %}Открытие проекта — Загрузка данных{% endblock %}
 
 {% block content %}
 
-<h1>Загрузка данных</h1>
-
-<div class="info">
-    Загрузите файлы проекта.
-</div>
+<header class="mb-12">
+    <div class="flex items-center gap-3 mb-4">
+        <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Восстановление проекта</span>
+    </div>
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Открытие проекта</h1>
+    <p class="text-base text-slate-500 max-w-xl">
+        Загрузите архив ранее сохранённого проекта и остальные файлы для продолжения работы.
+    </p>
+</header>
 
 {% if date_error %}
-<div style="background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="margin-top: 0; font-weight: bold;">Ошибка в дате</h3>
-    <p style="margin-bottom: 0;">{{ date_error }}</p>
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-amber-500 px-5 py-4">
+    <div class="flex gap-3">
+        <div class="flex-1">
+            <p class="text-sm font-semibold text-slate-900 mb-1">Ошибка в дате</p>
+            <p class="text-sm text-slate-600">{{ date_error }}</p>
+        </div>
+    </div>
 </div>
 {% endif %}
 
 {% if file_errors %}
-<div style="background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="margin-top: 0; font-weight: bold;">Ошибка при загрузке файлов</h3>
-    <ul style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-red-500 px-5 py-4">
+    <p class="text-sm font-semibold text-slate-900 mb-3">Ошибки в загруженных файлах</p>
+    <ul class="space-y-2 mb-3">
         {% for error in file_errors %}
-            <li style="margin-bottom: 8px;">{{ error }}</li>
+            <li class="text-sm text-slate-600 flex gap-2">
+                <span class="text-red-500 font-bold shrink-0">—</span>
+                <span>{{ error }}</span>
+            </li>
         {% endfor %}
     </ul>
-    <p style="margin-top: 15px; font-size: 14px;">Пожалуйста, исправьте файлы согласно шаблону и попробуйте загрузить снова.</p>
+    <p class="text-xs text-slate-400">Пожалуйста, исправьте файлы согласно шаблону и попробуйте загрузить снова.</p>
 </div>
 {% endif %}
 
-<form action="/upload_project" method="post" enctype="multipart/form-data">
+<form action="/upload_project" method="post" enctype="multipart/form-data" class="space-y-10">
 
-    <p>
-        <label for="project_zip">Файл проекта:</label><br>
-        <input type="file"
-               id="project_zip"
-               name="project_zip"
-               accept=".zip"
-               required 
-               style="width: 300px; padding: 8px; font-size: 1.05em;">
-    </p>
+    <section>
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">1.</span>
+            <h2 class="text-base font-semibold text-slate-900">Архив проекта</h2>
+        </div>
 
-    <p>
-        <label for="doc_date">Дата составления документа (дд.мм.гггг):</label><br>
-        <input type="text"
-               id="doc_date"
-               name="doc_date"
-               placeholder="например: 15.10.2025"
-               value="{{ default_date }}"
-               required
-               style="width: 300px; padding: 8px; font-size: 1.05em;">
-    </p>
+        <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+            <div class="p-5">
+                <div class="flex items-start justify-between mb-6">
+                    <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                    </svg>
+                    <span class="text-xs font-medium text-slate-400 uppercase">.zip</span>
+                </div>
+                <p class="text-sm font-medium text-slate-900 mb-1">Сохранённый проект</p>
+                <p class="text-xs file-status text-slate-400 truncate">Файл не выбран</p>
+            </div>
+            <input type="file" name="project_zip" accept=".zip" required class="hidden">
+        </label>
+    </section>
 
-    <p>
-        <label for="card_template_file">Шаблон карты (.docx):</label><br>
-        <input type="file"
-               id="card_template_file"
-               name="card_template_file"
-               accept=".docx"
-               required>
-    </p>
+    <section>
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">2.</span>
+            <h2 class="text-base font-semibold text-slate-900">Дата составления документа</h2>
+        </div>
 
-    <p>
-        <label for="rep_template_file">Шаблон отчета (.docx):</label><br>
-        <input type="file"
-               id="rep_template_file"
-               name="rep_template_file"
-               accept=".docx"
-               required>
-    </p>
+        <div class="max-w-xs">
+            <input type="text"
+                   id="doc_date"
+                   name="doc_date"
+                   placeholder="ДД.ММ.ГГГГ"
+                   value="{{ default_date }}"
+                   required
+                   class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+            <p class="text-xs text-slate-400 mt-2">Например: 15.10.2025</p>
+        </div>
+    </section>
 
-    <p>
-        <label for="people_file">Список работников / должностей (.xlsx):</label><br>
-        <input type="file"
-               id="people_file"
-               name="people_file"
-               accept=".xlsx"
-               required>
-    </p>
+    <section>
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">3.</span>
+            <h2 class="text-base font-semibold text-slate-900">Шаблоны документов</h2>
+        </div>
 
-    <p>
-        <label for="org_file">Данные организации (.xlsx):</label><br>
-        <input type="file"
-               id="org_file"
-               name="org_file"
-               accept=".xlsx"
-               required>
-    </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-    <button type="submit">Загрузить и продолжить</button>
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+                <div class="p-5">
+                    <div class="flex items-start justify-between mb-6">
+                        <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span class="text-xs font-medium text-slate-400 uppercase">.docx</span>
+                    </div>
+                    <p class="text-sm font-medium text-slate-900 mb-1">Шаблон карты</p>
+                    <p class="text-xs file-status text-slate-400 truncate">Файл не выбран</p>
+                </div>
+                <input type="file" name="card_template_file" accept=".docx" required class="hidden">
+            </label>
+
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+                <div class="p-5">
+                    <div class="flex items-start justify-between mb-6">
+                        <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span class="text-xs font-medium text-slate-400 uppercase">.docx</span>
+                    </div>
+                    <p class="text-sm font-medium text-slate-900 mb-1">Шаблон отчета</p>
+                    <p class="text-xs file-status text-slate-400 truncate">Файл не выбран</p>
+                </div>
+                <input type="file" name="rep_template_file" accept=".docx" required class="hidden">
+            </label>
+
+        </div>
+    </section>
+
+    <section>
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">4.</span>
+            <h2 class="text-base font-semibold text-slate-900">Исходные данные</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+                <div class="p-5">
+                    <div class="flex items-start justify-between mb-6">
+                        <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="text-xs font-medium text-slate-400 uppercase">.xlsx</span>
+                    </div>
+                    <p class="text-sm font-medium text-slate-900 mb-1">Список работников</p>
+                    <p class="text-xs file-status text-slate-400 truncate">Файл не выбран</p>
+                </div>
+                <input type="file" name="people_file" accept=".xlsx" required class="hidden">
+            </label>
+
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+                <div class="p-5">
+                    <div class="flex items-start justify-between mb-6">
+                        <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        <span class="text-xs font-medium text-slate-400 uppercase">.xlsx</span>
+                    </div>
+                    <p class="text-sm font-medium text-slate-900 mb-1">Данные организации</p>
+                    <p class="text-xs file-status text-slate-400 truncate">Файл не выбран</p>
+                </div>
+                <input type="file" name="org_file" accept=".xlsx" required class="hidden">
+            </label>
+
+        </div>
+    </section>
+
+    <div class="pt-4 flex flex-wrap items-center gap-3">
+        <button type="submit"
+                class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-10 py-3 text-sm uppercase tracking-wide transition-colors">
+            Открыть проект
+        </button>
+        <a href="/"
+           class="inline-block bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-10 py-3 text-sm uppercase tracking-wide transition-colors">
+            В главное меню
+        </a>
+    </div>
 
 </form>
+
+<script>
+document.querySelectorAll('input[type="file"]').forEach(function(input) {
+    input.addEventListener('change', function() {
+        var statusEl = this.closest('label').querySelector('.file-status');
+        if (this.files.length > 0) {
+            statusEl.textContent = this.files[0].name;
+            statusEl.classList.remove('text-slate-400');
+            statusEl.classList.add('text-blue-600', 'font-medium');
+        }
+    });
+});
+</script>
 
 {% endblock %}

@@ -1,70 +1,169 @@
 {% extends "base.html" %}
 
-{% block title %}Выбор работников для заполнения рисков{% endblock %}
+{% block title %}Работники организации{% endblock %}
 
 {% block content %}
-<h1>Работники организации</h1>
-<p>Выберите работника для заполнения рисков или загрузите готовый шаблон.</p>
 
-{% for worker in workers %}
-<div class="worker-card"
-     data-position="{{ worker.position }}"
-     data-completed="{% if worker.workerTotal != 0 %}true{% else %}false{% endif %}"
-     style="margin-bottom: 1.5em; padding: 1em; border: 1px solid #dee2e6; border-radius: 6px; background: #f8f9fa; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5em;">
-    <div style="flex: 2; min-width: 250px;">
-        <strong>{{ worker.position }}</strong><br>
-        <span style="color: #6c757d;">{{ worker.full_name }}</span>
+<div class="pb-28">
+
+    <header class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Оценка рисков</span>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900 mb-2">Работники организации</h1>
+        <p class="text-base text-slate-500 max-w-xl">Выберите работника для заполнения рисков или примените шаблон к нескольким работникам одновременно</p>
+    </header>
+
+    <div class="flex items-center gap-6 mb-6 pb-4 border-b border-slate-200">
+        <a href="#" onclick="selectAll(); return false;" class="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">Выбрать всех</a>
+        <a href="#" onclick="deselectAll(); return false;" class="text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Снять выделение</a>
     </div>
 
-    <div style="flex: 1; min-width: 150px;">
-        {% if worker.workerTotal != 0 %}
-            <span style="color: #28a745;">{{ worker.workerTotal | round(1) }}</span>
-        {% else %}
-            <span style="color: #dc3545;">{{ worker.workerTotal | round(1) }}</span>
-        {% endif %}
+    {% if error_message %}
+    <div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-red-500 px-5 py-4">
+        <p class="text-sm font-semibold text-slate-900 mb-1">Невозможно сформировать отчёт</p>
+        <p class="text-sm text-slate-600">{{ error_message }}</p>
     </div>
-    <div style="flex: 1; min-width: 120px;">
-        <a href="/worker_risks/{{ job_id }}/{{ loop.index0 }}" class="btn-small">Заполнить вручную</a>
+    {% endif %}
+
+    <div id="generateErrorBlock" class="hidden mb-6 bg-white border border-slate-200 border-l-4 border-l-red-500 px-5 py-4">
+        <p class="text-sm font-semibold text-slate-900 mb-3">Невозможно сформировать отчёт. Следующие карты не заполнены:</p>
+        <ul id="uncompletedList" class="space-y-1.5 mb-3"></ul>
+        <p class="text-xs text-slate-400">Пожалуйста, заполните все карты перед генерацией отчёта.</p>
     </div>
-    <div style="flex: 3; min-width: 300px;">
-        <form method="post" action="/apply-template/{{ job_id }}/{{ loop.index0 }}" enctype="multipart/form-data" style="display: flex; gap: 0.5em; align-items: center;">
-            <input type="file" name="template_file" accept=".json" required style="flex: 2; padding: 0.3em;">
-            <button type="submit" class="btn-small">Применить шаблон</button>
-        </form>
+
+    <div class="space-y-3 mb-10">
+        {% for worker in workers %}
+        <div class="worker-card border border-slate-300 hover:border-slate-400 transition-colors p-4 flex items-center gap-4 {% if worker.workerTotal != 0 %}bg-slate-100{% else %}bg-white{% endif %}"
+             data-position="{{ worker.position }}"
+             data-completed="{% if worker.workerTotal != 0 %}true{% else %}false{% endif %}"
+             data-idx="{{ loop.index0 }}">
+            <input type="checkbox"
+                   class="worker-checkbox accent-blue-600 w-4 h-4 shrink-0 cursor-pointer"
+                   data-idx="{{ loop.index0 }}"
+                   onchange="updateSelectedCount()">
+            <div class="flex-1 min-w-0">
+                <div class="font-medium text-slate-900 text-sm">{{ worker.position }}</div>
+                <div class="text-sm text-slate-500 truncate">{{ worker.full_name }}</div>
+            </div>
+            <div class="shrink-0 w-20 text-right">
+                {% if worker.workerTotal != 0 %}
+                    <span class="text-sm font-semibold text-green-600 tabular-nums">{{ worker.workerTotal | round(1) }}</span>
+                {% else %}
+                    <span class="text-sm font-semibold text-red-500 tabular-nums">{{ worker.workerTotal | round(1) }}</span>
+                {% endif %}
+            </div>
+            <div class="shrink-0">
+                <a href="/worker_risks/{{ job_id }}/{{ loop.index0 }}"
+                   class="inline-block bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-medium px-4 py-2 text-sm transition-colors">
+                    Заполнить вручную
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-slate-200">
+        <a href="#" id="generateBtn" onclick="checkBeforeGenerate(event)"
+           class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Сформировать все отчёты
+        </a>
+        <a href="/" onclick="sessionStorage.removeItem('scrollPosition');"
+           class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            В главное меню
+        </a>
+        <a href="/save-project/{{ job_id }}"
+           class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Сохранить проект
+        </a>
+    </div>
+
+</div>
+
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-3xl px-4 pointer-events-none">
+    <div class="pointer-events-auto bg-white border border-slate-200 shadow-xl rounded-full px-6 py-3 flex items-center gap-4">
+        <div class="text-sm text-slate-600 whitespace-nowrap">
+            Выбрано: <span id="selectedCount" class="font-bold text-slate-900 tabular-nums">0</span>
+        </div>
+        <div class="flex-1 min-w-0">
+            <input type="file" id="bulkTemplateFile" accept=".json"
+                   class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:border-0 file:text-xs file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:rounded-full file:cursor-pointer cursor-pointer">
+        </div>
+        <button type="button" onclick="applyBulkTemplate()"
+                class="shrink-0 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-6 py-2.5 text-sm uppercase tracking-wide rounded-full transition-colors">
+            Применить к выбранным
+        </button>
     </div>
 </div>
-{% endfor %}
 
-{% if error_message %}
-<div id="errorBlock" style="background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="margin-top: 0; font-weight: bold;">Невозможно сформировать отчёт.</h3>
-    <p style="margin-bottom: 10px;">{{ error_message }}</p>
-</div>
-{% endif %}
-
-<div id="errorBlock" style="display: none; background-color: #f8d7da; border: 2px solid #dc3545; color: #721c24; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="margin-top: 0; font-weight: bold;">Невозможно сформировать отчёт.</h3>
-    <p style="margin-bottom: 10px;">Следующие карты не заполнены:</p>
-    <ul id="uncompletedList" style="margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
-    </ul>
-    <p style="margin-top: 15px; font-size: 14px;">Пожалуйста, заполните все карты перед генерацией отчёта.</p>
-</div>
-
-<div style="margin-top: 2em;">
-    <a href="#" id="generateBtn" class="btn" onclick="checkBeforeGenerate(event)">Сформировать все отчёты</a>
-    <a href="/" class="btn" style="background: #95a5a6;" onclick="localStorage.removeItem('scrollPosition');">В главное меню</a>
-    <a href="/save-project/{{ job_id }}" class="btn" onclick="localStorage.removeItem('scrollPosition');">Сохранить проект</a>
-</div>
 <script>
+function updateSelectedCount() {
+    var checkboxes = document.querySelectorAll('.worker-checkbox:checked');
+    document.getElementById('selectedCount').textContent = checkboxes.length;
+}
+
+function selectAll() {
+    document.querySelectorAll('.worker-checkbox').forEach(function(cb) { cb.checked = true; });
+    updateSelectedCount();
+}
+
+function deselectAll() {
+    document.querySelectorAll('.worker-checkbox').forEach(function(cb) { cb.checked = false; });
+    updateSelectedCount();
+}
+
+function applyBulkTemplate() {
+    var checkboxes = document.querySelectorAll('.worker-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Выберите хотя бы одного работника');
+        return;
+    }
+
+    var fileInput = document.getElementById('bulkTemplateFile');
+    if (!fileInput.files[0]) {
+        alert('Выберите файл шаблона');
+        return;
+    }
+
+    var workerIndices = Array.from(checkboxes).map(function(cb) { return cb.getAttribute('data-idx'); });
+
+    var formData = new FormData();
+    formData.append('template_file', fileInput.files[0]);
+    workerIndices.forEach(function(idx) { formData.append('worker_indices', idx); });
+
+    sessionStorage.setItem('scrollPosition', window.scrollY);
+
+    fetch('/apply-template-bulk/{{ job_id }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(response) {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else if (response.ok) {
+            window.location.reload();
+        } else {
+            return response.json().then(function(data) {
+                sessionStorage.removeItem('scrollPosition');
+                alert('Ошибка: ' + (data.detail || 'Неизвестная ошибка'));
+            });
+        }
+    })
+    .catch(function(error) {
+        sessionStorage.removeItem('scrollPosition');
+        alert('Ошибка при применении шаблона: ' + error);
+    });
+}
+
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('a');
-    if (link && link.href.includes('/worker_risks/')) {
+    var link = e.target.closest('a');
+    if (link && link.href && link.href.indexOf('/worker_risks/') !== -1) {
         sessionStorage.setItem('scrollPosition', window.scrollY);
     }
 });
 
 window.addEventListener('load', function() {
-    const savedPosition = sessionStorage.getItem('scrollPosition');
+    var savedPosition = sessionStorage.getItem('scrollPosition');
     if (savedPosition) {
         setTimeout(function() {
             window.scrollTo({
@@ -79,37 +178,43 @@ window.addEventListener('load', function() {
 function checkBeforeGenerate(event) {
     event.preventDefault();
 
-    const uncompletedPositions = [];
-    document.querySelectorAll('.worker-card').forEach(card => {
-        const isCompleted = card.getAttribute('data-completed') === 'true';
+    var uncompletedPositions = [];
+    document.querySelectorAll('.worker-card').forEach(function(card) {
+        var isCompleted = card.getAttribute('data-completed') === 'true';
         if (!isCompleted) {
-            const position = card.getAttribute('data-position');
+            var position = card.getAttribute('data-position');
             uncompletedPositions.push(position);
         }
     });
 
+    var errorBlock = document.getElementById('generateErrorBlock');
+
     if (uncompletedPositions.length > 0) {
-        const errorBlock = document.getElementById('errorBlock');
-        const list = document.getElementById('uncompletedList');
-
+        var list = document.getElementById('uncompletedList');
         list.innerHTML = '';
-
-        uncompletedPositions.forEach(pos => {
-            const li = document.createElement('li');
-            li.textContent = pos;
-            li.style.marginBottom = '8px';
+        uncompletedPositions.forEach(function(pos) {
+            var li = document.createElement('li');
+            li.className = 'text-sm text-slate-600 flex gap-2';
+            var marker = document.createElement('span');
+            marker.className = 'text-red-500 font-bold shrink-0';
+            marker.textContent = '—';
+            var text = document.createElement('span');
+            text.textContent = pos;
+            li.appendChild(marker);
+            li.appendChild(text);
             list.appendChild(li);
         });
 
-        errorBlock.style.display = 'block';
-
+        errorBlock.classList.remove('hidden');
         errorBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         return false;
     } else {
+        errorBlock.classList.add('hidden');
         sessionStorage.removeItem('scrollPosition');
         window.location.href = '/generate/{{ job_id }}';
     }
 }
 </script>
+
 {% endblock %}

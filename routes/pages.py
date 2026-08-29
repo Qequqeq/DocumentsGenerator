@@ -25,6 +25,7 @@ import re
 import io
 from pathlib import Path
 from validator import validate_org_file, validate_people_file, validate_date
+from storage import save_job_data
 
 router = APIRouter()
 
@@ -303,7 +304,6 @@ async def upload_project(
     shutil.rmtree(extract_dir, ignore_errors=True)
     if zip_path.exists():
         zip_path.unlink()
-    from storage import save_job_data
     save_job_data(job_id, job)
 
     return templates.TemplateResponse(
@@ -654,6 +654,75 @@ async def apply_template(
     )
 
     job["generated_cards"].add(worker.ID)
+    return RedirectResponse(url=f"/select-dangers?job_id={job_id}", status_code=303)
+
+
+@router.post("/apply-template-bulk/{job_id}")
+async def apply_template_bulk(
+        request: Request,
+        job_id: str,
+        template_file: UploadFile = File(...),
+        worker_indices: List[str] = Form(...)
+):
+    job = load_job(job_id)
+    workers = job["people_data"]
+
+    content = await template_file.read()
+    try:
+        template_data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Некорректный JSON файл")
+
+    risks_data = template_data.get("risks")
+    if not isinstance(risks_data, dict):
+        raise HTTPException(status_code=400, detail="Отсутствует поле 'risks'")
+
+    inputs = {}
+    for d_key, r_dict in risks_data.items():
+        try:
+            d_id = int(d_key)
+        except ValueError:
+            try:
+                d_id = int(float(d_key))
+            except (ValueError, TypeError):
+                continue
+
+        inputs[d_id] = {}
+        for r_key, values in r_dict.items():
+            inputs[d_id][r_key] = {
+                "deg": values.get("deg", 1),
+                "ch": values.get("ch", 1),
+                "kef": values.get("kef", 0.0)
+            }
+
+    output_dir = UPLOAD_DIR / job_id / "output"
+    output_dir.mkdir(exist_ok=True)
+
+    applied_count = 0
+    for idx_str in worker_indices:
+        try:
+            worker_idx = int(idx_str)
+            if worker_idx < 0 or worker_idx >= len(workers):
+                continue
+
+            worker = workers[worker_idx]
+            job["risk_inputs"][worker.ID] = inputs
+            job["generated_cards"].add(worker.ID)
+            get_worker_risks(worker, job["org_dangers"], inputs)
+
+            generate_worker_card(
+                template_path=job["card_template_path"],
+                doc_date=job["doc_date"],
+                org_data=job["org_data"],
+                workName=worker,
+                output_dir=output_dir
+            )
+            applied_count += 1
+        except (ValueError, TypeError):
+            continue
+
+    save_job_data(job_id, job)
+
     return RedirectResponse(url=f"/select-dangers?job_id={job_id}", status_code=303)
 
 def sanitize_filename(name: str) -> str:
