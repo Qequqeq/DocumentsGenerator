@@ -1,34 +1,8 @@
 # -*- coding: utf-8 -*-
-from os.path import curdir
-
 from models import *
-
 import pandas as pd
 import pathlib as path
 
-
-def make_person(person_data):
-    person_data = person_data.split("@")
-    person_pos = person_data[0]
-    person_name = person_data[1]
-    return person_pos, person_name
-
-def check_chairmen_text(arr):
-    merged = []
-    i = 0
-    while i < len(arr):
-        cur = arr[i].strip()
-        if '@' in cur:
-            merged.append(cur)
-            i += 1
-        else:
-            combined = cur
-            i += 1
-            while i < len(arr) and '@' not in combined:
-                combined += ', ' + arr[i].strip()
-                i += 1
-            merged.append(combined)
-    return merged
 
 def parce_people_data(person_path='', data_frame=pd.DataFrame()):
     df = None
@@ -101,6 +75,7 @@ def parce_people_data(person_path='', data_frame=pd.DataFrame()):
             positions.append(str(row.iloc[1].strip()))
     return workers
 
+
 def find_worker_in_text(text: str, workers: List[WorkName]) -> Optional[WorkName]:
     if pd.isna(text) or text == "":
         return None
@@ -146,53 +121,58 @@ def parce_org_data(org_path='', workers_list=None, data_frame=pd.DataFrame()):
     oktmo = get_val(7)
     adres = get_val(8)
 
-    leader_text = str(df.iloc[9, 1])
-    chairman_text = str(df.iloc[10, 1])
-    chairmen_text = str(df.iloc[11, 1]).split(',')
-    chairmen_text = check_chairmen_text(chairmen_text)
+    leader_position = str(df.iloc[10, 1])
+    leader_fio = str(df.iloc[10, 2])
 
-
-    lead_typle = make_person(leader_text)
     leader = Chairman(
-        position=lead_typle[0],
-        full_name=lead_typle[1]
+        position=leader_position,
+        full_name=leader_fio
     )
-    chairman_typle = make_person(chairman_text)
+
+    chairman_position = str(df.iloc[12, 1])
+    chairman_fio = str(df.iloc[12, 2])
     chairman = Chairman(
-        position=chairman_typle[0],
-        full_name=chairman_typle[1]
+        position=chairman_position,
+        full_name=chairman_fio
     )
-
-
-    chairmen_typle = []
-    for man in chairmen_text:
-        chairmen_typle.append(make_person(man))
 
     chairmen = []
-    for tpl in chairmen_typle:
-        chairmen.append(
-            Chairman(
-                position= tpl[0],
-                full_name= tpl[1]
-            )
-        )
+    start_idx = 14
+    col_position = 1
+    col_name = 2
+
+    while start_idx < len(df):
+        pos = df.iloc[start_idx, col_position]
+        name = df.iloc[start_idx, col_name]
+
+        pos_empty = pd.isna(pos) or (isinstance(pos, str) and pos.strip() == "")
+        name_empty = pd.isna(name) or (isinstance(name, str) and name.strip() == "")
+
+        if pos_empty and name_empty:
+            break
+        chairmen.append(Chairman(
+            position=str(pos) if not pos_empty else "",
+            full_name=str(name) if not name_empty else ""
+        ))
+        start_idx += 1
 
     org = Organization(
-        full_name= full_name,
-        short_name= short_name,
-        kpp= kpp,
-        inn= inn,
-        okpo= okpo,
-        okogy= okogy,
-        okved= okved,
-        oktmo= oktmo,
-        adres= adres,
-        leader = leader,
-        chairman= chairman,
-        com_members= chairmen,
-        workers= workers_list
+        full_name=full_name,
+        short_name=short_name,
+        kpp=kpp,
+        inn=inn,
+        okpo=okpo,
+        okogy=okogy,
+        okved=okved,
+        oktmo=oktmo,
+        adres=adres,
+        leader=leader,
+        chairman=chairman,
+        com_members=chairmen,
+        workers=workers_list
     )
     return org
+
 
 def translit(word):
     converter = {

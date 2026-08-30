@@ -321,11 +321,18 @@ async def upload_project(
 @router.get("/select-dangers")
 def show_select_dangers(request: Request, job_id: str):
     job = load_job(job_id)
+    workers = job["people_data"]
+
+    for worker in workers:
+        inputs = job["risk_inputs"].get(worker.ID, {})
+        if inputs:
+            get_worker_risks(worker, job["org_dangers"], inputs)
+
     return templates.TemplateResponse(
         "select_worker_risks.html",
         {
             "request": request,
-            "workers": job["people_data"],
+            "workers": workers,
             "job_id": job_id,
             "risk_inputs": job.get("risk_inputs", {}),
             "generated_cards": job.get("generated_cards", set())
@@ -591,9 +598,8 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
         output_dir=output_dir
     )
 
-    job["generated_cards"].add(worker.position)
-
     print(f"Сгенерирована карта для: {worker.position}")
+    save_job_data(job_id, job)
     return RedirectResponse(url=f"/select-dangers?job_id={job_id }", status_code=303)
 
 @router.post("/apply-template/{job_id}/{worker_idx}")

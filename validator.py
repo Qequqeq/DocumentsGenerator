@@ -14,12 +14,9 @@ def validate_org_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.Dat
             f"Не удалось прочитать файл Excel: {str(e)}")
         return False, errors, None
 
-    if df.shape[0] != 12:
+    if df.shape[1] != 4:
         errors.append(
-            f"Файл организации должен содержать 12 строк. Найдено {df.shape[0]} строк, смотрите шаблон.")
-    if df.shape[1] != 3:
-        errors.append(
-            f"Файл организации должен содержать 3 столбца. Найдено {df.shape[1]} столбцов, смотрите шаблон.")
+            f"Файл организации должен содержать 4 столбца. Найдено {df.shape[1]} столбцов, смотрите шаблон.")
     if errors:
         return False, errors, None
 
@@ -33,23 +30,27 @@ def validate_org_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.Dat
         return False, errors, None
 
     expected_rows = {
-        1: "Полное наименование организации",
-        2: "Сокращенное наименование организации",
-        3: "Код причины постановки на учёт (КПП)",
-        4: "Идентификационный номер налогоплательщика (ИНН)",
-        5: "Код работодателя по ОКПО",
-        6: "Код органа государственной власти по ОКОГУ",
-        7: "Код основного вида экономической деятельности работодателя ОКВЭД",
-        8: "Код территории по ОКТМО",
-        9: "Юридический адрес организации",
-        10: "Руководитель организации (должность, Ф.И.О. полностью)",
-        11: "Председатель рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)",
-        12: "Члены рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)"
+        0: [1, 'Полное наименование организации'],
+        1: [2, 'Сокращенное наименование организации'],
+        2: [3, 'Код причины постановки на учёт (КПП)'],
+        3: [4, 'Идентификационный номер налогоплательщика (ИНН)'],
+        4: [5, 'Код работодателя по ОКПО'],
+        5: [6, 'Код органа государственной власти по ОКОГУ'],
+        6: [7, 'Код основного вида экономической деятельности работодателя ОКВЭД'],
+        7: [8, 'Код территории по ОКТМО'],
+        8: [9, 'Юридический адрес организации'],
+        9: [10, 'Руководитель организации (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.'],
+        11: [11, 'Председатель рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.'],
+        13: [12, 'Члены рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.']
     }
     for i, row in enumerate(df.itertuples(index=False)):
-        expected_num = i + 1
+        if i == 10 or i == 12 or i > 13: continue
+        expected_num = expected_rows[i][0]
+        expected_name = expected_rows[i][1]
+
         row_idx = row[0]
         row_name = row[1]
+
         try:
             actual_num = int(float(row_idx))
         except (ValueError, TypeError):
@@ -62,14 +63,26 @@ def validate_org_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.Dat
 
         if pd.isna(row_name):
             errors.append(
-                f"В строке {expected_num} название данных отсутствует (пустая ячейка). Ожидается: \"{expected_rows[expected_num]}\".")
+                f"В строке {expected_num} название данных отсутствует (пустая ячейка). Ожидается: \"{expected_rows[i][1]}\".")
             continue
 
-        actual_name = str(row_name).strip()
-        if actual_name != expected_rows[expected_num]:
+        if row_name != expected_name:
             errors.append(
-                f"Строка {expected_num}: ожидалось \"{expected_rows[expected_num]}\", получено \"{actual_name}\".")
+                f"В строке {expected_num} ожидалось \"{expected_rows[i][1]}\", найдено \"{row_name}\"."
+            )
 
+        if i > 8:
+            dop_cols = [row[2], row[3]]
+            for j in range(2):
+                col = dop_cols[j]
+                if pd.isna(col):
+                    errors.append(
+                        f"В строке {expected_num} отсутствует столбец для должности. Ожидается: \"{expected_rows[i][j + 2]}\"."
+                    )
+                if col != expected_rows[i][j + 2]:
+                    errors.append(
+                        f"Ошибка в строке {expected_num}: ожидался столбец: \"{expected_rows[i][j + 2]}\", найден \"{col}\"."
+                    )
     if errors:
         return False, errors, None
 

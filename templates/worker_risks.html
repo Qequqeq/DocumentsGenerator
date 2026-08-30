@@ -17,7 +17,7 @@
         <p class="text-sm text-slate-400 mt-2">Заполните оценки для каждого риска. Если какой-то из множителей равен нулю, риск будет пропущен.</p>
     </header>
 
-    <form method="post" action="/save-worker-risks/{{ job_id }}/{{ worker_idx }}" id="risksForm">
+    <form method="post" action="/save_worker_risks/{{ job_id }}/{{ worker_idx }}" id="risksForm">
         {% for danger in dangers %}
         <div class="danger-section hidden" data-danger-id="{{ danger.danger_number }}">
             <div class="mb-6">
@@ -41,42 +41,42 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-2">Степень травм.</label>
-                            <select name="deg_{{ danger.danger_number }}_{{ risk.risk_number }}"
+                            <select name="deg__{{ danger.danger_number }}__{{ risk.risk_number }}"
                                     class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                                     data-danger="{{ danger.danger_number }}"
                                     data-risk="{{ risk.risk_number }}"
                                     data-type="deg">
                                 {% for i in range(1, 6) %}
-                                <option value="{{ i }}">{{ i }}</option>
+                                <option value="{{ i }}" {% if existing[danger.danger_number][risk.risk_number]['deg'] == i %}selected{% endif %}>{{ i }}</option>
                                 {% endfor %}
                             </select>
                         </div>
 
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-2">Вероятность</label>
-                            <select name="ch_{{ danger.danger_number }}_{{ risk.risk_number }}"
+                            <select name="ch__{{ danger.danger_number }}__{{ risk.risk_number }}"
                                     class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                                     data-danger="{{ danger.danger_number }}"
                                     data-risk="{{ risk.risk_number }}"
                                     data-type="ch">
                                 {% for i in range(1, 6) %}
-                                <option value="{{ i }}">{{ i }}</option>
+                                <option value="{{ i }}" {% if existing[danger.danger_number][risk.risk_number]['ch'] == i %}selected{% endif %}>{{ i }}</option>
                                 {% endfor %}
                             </select>
                         </div>
 
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-2">Коэффициент</label>
-                            <select name="kef_{{ danger.danger_number }}_{{ risk.risk_number }}"
+                            <select name="kef__{{ danger.danger_number }}__{{ risk.risk_number }}"
                                     class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                                     data-danger="{{ danger.danger_number }}"
                                     data-risk="{{ risk.risk_number }}"
                                     data-type="kef">
                                 {% set opts = [0, 0.1, 0.3, 0.5, 0.7, 0.9] %}
                                 {% for k in opts %}
-                                <option value="{{ k }}">{{ k }}</option>
+                                <option value="{{ k }}" {% if existing[danger.danger_number][risk.risk_number]['kef'] == k %}selected{% endif %}>{{ k }}</option>
                                 {% endfor %}
-                            </select>
+                        </select>
                         </div>
                     </div>
                 </div>
