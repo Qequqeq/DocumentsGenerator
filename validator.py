@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 from pathlib import Path
 from typing import Tuple, List, Optional

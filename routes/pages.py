@@ -878,3 +878,61 @@ async def shutdown():
     await asyncio.create_task(stop_server())
 
     return {"status": "shutting down"}
+
+ORG_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "org_templates"
+
+ORG_TEMPLATE_FILES = {
+    "people_blank": "people_card_blank.xlsx",
+    "people_example": "people_card_example.xlsx",
+    "people_pdf": "people_card_example.pdf",
+    "org_blank": "organization_card_blank.xlsx",
+    "org_example": "organization_card_example.xlsx",
+    "org_pdf": "organization_card_example.pdf",
+}
+
+@router.get("/org_templates")
+def org_templates_page(request: Request):
+    return templates.TemplateResponse(
+        "org_templates.html",
+        {"request": request}
+    )
+
+
+@router.get("/org_templates/download/{file_key}")
+def org_templates_download(file_key: str):
+    if file_key not in ORG_TEMPLATE_FILES:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    file_path = ORG_TEMPLATES_DIR / ORG_TEMPLATE_FILES[file_key]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(file_path, filename=ORG_TEMPLATE_FILES[file_key])
+
+
+@router.get("/org_templates/view/{file_key}")
+def org_templates_view(file_key: str):
+    if file_key not in ORG_TEMPLATE_FILES:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    file_path = ORG_TEMPLATES_DIR / ORG_TEMPLATE_FILES[file_key]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "inline"}
+    )
+
+
+@router.get("/risk_templates")
+def risk_templates(request: Request):
+    return templates.TemplateResponse(
+        "risk_templates.html",
+        {"request": request}
+    )
+
+
+@router.get("/doc_templates")
+def doc_templates(request: Request):
+    return templates.TemplateResponse(
+        "doc_templates.html",
+        {"request": request}
+    )
