@@ -39,12 +39,16 @@ def validate_org_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.Dat
         6: [7, 'Код основного вида экономической деятельности работодателя ОКВЭД'],
         7: [8, 'Код территории по ОКТМО'],
         8: [9, 'Юридический адрес организации'],
-        9: [10, 'Руководитель организации (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.'],
-        11: [11, 'Председатель рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.'],
-        13: [12, 'Члены рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.']
+        9: [10, 'Аудитор (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.'],
+        11: [11, 'Руководитель организации (должность, Ф.И.О. полностью)', 'Должность', 'Ф.И.О.'],
+        13: [12,
+             'Председатель рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)',
+             'Должность', 'Ф.И.О.'],
+        15: [13, 'Члены рабочей группы по проведению оценки профессиональных рисков (должность, Ф.И.О. полностью)',
+             'Должность', 'Ф.И.О.']
     }
     for i, row in enumerate(df.itertuples(index=False)):
-        if i == 10 or i == 12 or i > 13: continue
+        if i == 10 or i == 12 or i == 14 or i > 15: continue
         expected_num = expected_rows[i][0]
         expected_name = expected_rows[i][1]
 
@@ -120,46 +124,64 @@ def validate_people_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.
     if errors:
         return False, errors, None
 
+
     worker_ids = {}
-    alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     cur_number = 1
+    last_div_level = 0
     for i, row in enumerate(df.itertuples(index=False)):
         cur_worker_id = row[0]
         if pd.isna(cur_worker_id):
             if isinstance(row[1], str):
-                if cur_number in worker_ids:
+                if cur_number in worker_ids and row[1] != "Подразделение":
+                    print(row)
+                    print(worker_ids)
                     errors.append(
                         f"Повторяется ID сотрудника \"{cur_number}\" в строках "
                         f"{worker_ids[cur_number] + 2} и {i + 2}."
                         f"Возможно, это вызвано смешиванием явной и неявной нумерации."
                     )
                 else:
-                    worker_ids[cur_number] = i
+                    if row[1] != "Подразделение":
+                        worker_ids[cur_number] = i
                 cur_number += 1
                 continue
         clean_id = str(cur_worker_id).strip()
         if not clean_id:
             continue
-        if clean_id[0] in alph:
-            for v in clean_id:
-                if v not in alph:
+        if row[1] == "Подразделение":
+            if not isinstance(clean_id, str):
+                try:
+                    c_id = float(clean_id)
+                except Exception as e:
                     errors.append(
-                        f"Неопознанный символ \"{v}\" в маркере подразделения строки {i + 2}. "
-                        f"Допускаются только заглавные латинские буквы."
+                        f"Неопознанный символ \"{clean_id}\" в маркере подразделения строки {i + 2}. "
+                        f"Допускаются только маркеры-цифры"
                     )
+            if int(float(clean_id)) != float(clean_id):
+                errors.append(
+                    f"Неопознанный символ \"{clean_id}\" в маркере подразделения строки {i + 2}. "
+                    f"Допускаются только целочисленные маркеры"
+                )
+            if abs(last_div_level - int(float(clean_id))) > 1 and int(float(clean_id)) != 1:
+                errors.append(
+                    f"За подразделением с маркером {last_div_level} следует подразделение {row[1]} с маркером {int(float(clean_id))}."
+                    f"Маркеры должны идти с шагом в единицу, либо быть 1 для подразделений верхнего уровня."
+                )
+            last_div_level = int(float(clean_id))
         else:
             try:
                 worker_id = float(clean_id)
                 if worker_id == int(worker_id):
                     worker_id = int(worker_id)
-                if worker_id in worker_ids:
+                if worker_id in worker_ids and row[1] != "Подразделение":
                     errors.append(
                         f"Повторяется ID сотрудника \"{worker_id}\" в строках "
                         f"{worker_ids[worker_id] + 2} и {i + 2}."
                         f"Возможно, это вызвано смешиванием явной и неявной нумерации."
                     )
                 else:
-                    worker_ids[worker_id] = i
+                    if row[1] != "Подразделение":
+                        worker_ids[worker_id] = i
             except (ValueError, TypeError):
                 errors.append(
                     f"Некорректный ID сотрудника \"{cur_worker_id}\" в строке {i + 2}. "

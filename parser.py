@@ -16,7 +16,6 @@ def parce_people_data(person_path='', data_frame=pd.DataFrame()):
     else:
         df = data_frame
     worker_number = 1
-    alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
     df = df.fillna(int(0))
 
@@ -26,17 +25,17 @@ def parce_people_data(person_path='', data_frame=pd.DataFrame()):
     level = []
     for _, row in df.iterrows():
         val = row.iloc[0]
-        if isinstance(val, str) and val[0] in alph:
+        if row.iloc[1] == "Подразделение":
             if not level:
-                level.append(str(row.iloc[0]))
+                level.append(float(row.iloc[0]))
                 div.append(str(row.iloc[2]))
             else:
-                while len(level) > 0 and ord(level[-1]) >= ord(str(row.iloc[0])):
+                while len(level) > 0 and level[-1] >= float(row.iloc[0]):
                     level = level[:-1]
                     div = div[:-1]
 
                 div.append(str(row.iloc[2]))
-                level.append(str(row.iloc[0]))
+                level.append(float(row.iloc[0]))
         else:
             worker_id = None
             if pd.notna(val):
@@ -60,7 +59,7 @@ def parce_people_data(person_path='', data_frame=pd.DataFrame()):
                 WorkName(
                     ID = worker_id,
                     position= str(row.iloc[1].strip()),
-                    division=div,
+                    division=div[:],
                     number_at_workplace=int(row.iloc[2]),
                     woman=int(row.iloc[3]),
                     minors=int(row.iloc[4]),
@@ -121,16 +120,24 @@ def parce_org_data(org_path='', workers_list=None, data_frame=pd.DataFrame()):
     oktmo = get_val(7)
     adres = get_val(8)
 
-    leader_position = str(df.iloc[10, 1])
-    leader_fio = str(df.iloc[10, 2])
+    auditor_position = str(df.iloc[10, 1])
+    auditor_fio = str(df.iloc[10, 2])
+
+    auditor = Chairman(
+        position=auditor_position,
+        full_name=auditor_fio
+    )
+
+    leader_position = str(df.iloc[12, 1])
+    leader_fio = str(df.iloc[12, 2])
 
     leader = Chairman(
         position=leader_position,
         full_name=leader_fio
     )
 
-    chairman_position = str(df.iloc[12, 1])
-    chairman_fio = str(df.iloc[12, 2])
+    chairman_position = str(df.iloc[14, 1])
+    chairman_fio = str(df.iloc[14, 2])
     chairman = Chairman(
         position=chairman_position,
         full_name=chairman_fio
@@ -166,6 +173,7 @@ def parce_org_data(org_path='', workers_list=None, data_frame=pd.DataFrame()):
         okved=okved,
         oktmo=oktmo,
         adres=adres,
+        auditor=auditor,
         leader=leader,
         chairman=chairman,
         com_members=chairmen,

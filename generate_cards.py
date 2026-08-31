@@ -66,7 +66,8 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
             'controlInfo': CONTROL_INFO[workName.summary_info],
             'documentDate': doc_date,
             'comission': comission,
-            'division': workName.division
+            'division': workName.division,
+            'auditor_name': 'Листикова Галина Михайловна' #какая-то синхронизация с личным кабинетом
         }
         doc.render(context)
         safe_position = re.sub(r'[\\/*?:"<>|]', '', workName.position)
@@ -247,7 +248,9 @@ def generate_report(
         'totalWorkPlaces': first_table_context['totalWorkPlaces'],
         'divisions': all_divisions,
         'divisions_summary': divisions_summary,
-        'comission': comission
+        'comission': comission,
+        'auditor_name': org_data.auditor.full_name,
+        'auditor_pos': org_data.auditor.position
     }
     context = context | first_table_context
 
