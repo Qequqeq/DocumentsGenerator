@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from dataclasses import dataclass, field
 from typing import List, Optional
-from RisksAndDangers import *
+from .RisksAndDangers import *
 @dataclass
 class WorkName:
     ID: float  # номер в документе

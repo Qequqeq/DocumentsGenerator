@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Настройка описаний{% endblock %}
+
+{% block content %}
+
+<header class="mb-8">
+    <div class="flex items-center gap-3 mb-4">
+        <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Настройки</span>
+    </div>
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Настройка описаний</h1>
+    <p class="text-base text-slate-500 max-w-xl">
+        Отредактируйте тексты, которые подставляются в карты рисков и сводный отчёт. Изменения применятся при следующей генерации документов.
+    </p>
+</header>
+
+{% if saved %}
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-green-500 px-5 py-4">
+    <p class="text-sm font-semibold text-slate-900 mb-1">Сохранено</p>
+    <p class="text-sm text-slate-600">Изменения применятся при следующей генерации документов.</p>
+</div>
+{% endif %}
+
+<form method="post" action="/settings/descriptions">
+
+    <section class="mb-12">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">1.</span>
+            <h2 class="text-base font-semibold text-slate-900">Степени тяжести последствий</h2>
+        </div>
+        <div class="space-y-4">
+            {% for idx in range(1, 6) %}
+            <div class="bg-white border border-slate-200 p-5">
+                <label class="block text-sm font-medium text-slate-900 mb-2">Степень {{ idx }}</label>
+                <textarea name="degree_{{ idx }}" rows="3"
+                          class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">{{ degree_info[idx] }}</textarea>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="mb-12">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">2.</span>
+            <h2 class="text-base font-semibold text-slate-900">Вероятность событий</h2>
+        </div>
+        <div class="space-y-4">
+            {% for idx in range(1, 6) %}
+            <div class="bg-white border border-slate-200 p-5">
+                <label class="block text-sm font-medium text-slate-900 mb-2">Вероятность {{ idx }}</label>
+                <textarea name="chance_{{ idx }}" rows="3"
+                          class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">{{ chance_info[idx] }}</textarea>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="mb-12">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">3.</span>
+            <h2 class="text-base font-semibold text-slate-900">Коэффициенты времени воздействия</h2>
+        </div>
+        <div class="space-y-4">
+            {% for idx, label in coeff_info.items() %}
+            <div class="bg-white border border-slate-200 p-5">
+                <label class="block text-sm font-medium text-slate-900 mb-2">Коэффициент {{ idx }}</label>
+                <textarea name="coeff_{{ idx }}" rows="2"
+                          class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">{{ label }}</textarea>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="mb-12">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">4.</span>
+            <h2 class="text-base font-semibold text-slate-900">Меры контроля по уровням риска</h2>
+        </div>
+        <div class="space-y-4">
+            {% for level, description in control_info.items() %}
+            <div class="bg-white border border-slate-200 p-5">
+                <label class="block text-sm font-medium text-slate-900 mb-2">{{ level }}</label>
+                <input type="hidden" name="control_key_{{ loop.index0 }}" value="{{ level }}">
+                <textarea name="control_value_{{ loop.index0 }}" rows="2"
+                          class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">{{ description }}</textarea>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-3 pt-8 border-t border-slate-200">
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Сохранить изменения
+        </button>
+        <a href="/"
+           class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            В главное меню
+        </a>
+    </div>
+
+</form>
+
+<form method="post" action="/settings/reset" class="mt-6">
+    <input type="hidden" name="return_url" value="/settings/descriptions">
+    <button type="submit"
+            class="bg-white border border-red-300 hover:border-red-500 hover:bg-red-50 text-red-600 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+        Восстановить значения по умолчанию
+    </button>
+    <p class="text-xs text-slate-400 mt-3">Полностью очищает все настройки описаний и диапазонов</p>
+</form>
+
+{% endblock %}

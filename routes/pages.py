@@ -8,6 +8,7 @@ from fastapi import (
     BackgroundTasks,
     HTTPException,
 )
+from typing import List
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 import json
@@ -16,16 +17,29 @@ import uuid
 import os
 import zipfile
 from datetime import date
-from generate_cards import *
-from getWorkerRisks import get_org_dangers, get_worker_risks
-from RisksAndDangers import DANGER_DATABASE, DEGREE_INFO, CHANCE_INFO, COEFF_INFO
-from storage import save_job, load_job
-from parser import translit
+from src.generate_cards import *
+from src.getWorkerRisks import get_org_dangers, get_worker_risks
+from src.RisksAndDangers import DANGER_DATABASE
+from src.customization import (
+    get_degree_info,
+    get_chance_info,
+    get_coeff_info,
+    get_summary_info_dict,
+    get_summary_info_aplication_dict,
+    get_control_info,
+    save_customization_section,
+    reset_all_customizations,
+    DEFAULT_SUMMARY_INFO,
+    DEFAULT_SUMMARY_INFO_APLICATION,
+)
+from src.RisksAndDangers import RISK_DATABASE
+from src.storage import save_job, load_job
+from src.parser import translit
 import re
 import io
 from pathlib import Path
-from validator import validate_org_file, validate_people_file, validate_date
-from storage import save_job_data
+from src.validator import validate_org_file, validate_people_file, validate_date
+from src.storage import save_job_data
 
 router = APIRouter()
 
@@ -71,9 +85,9 @@ def create_template_form(request: Request):
         {
             "request": request,
             "dangers": all_dangers,
-            "degree_info": DEGREE_INFO,
-            "chance_info": CHANCE_INFO,
-            "coeff_info": COEFF_INFO,
+            "degree_info": get_degree_info(),
+            "chance_info": get_chance_info(),
+            "coeff_info": get_coeff_info(),
             "existing": {}
         }
     )
@@ -497,9 +511,9 @@ def worker_risks_form(request: Request, job_id: str, worker_idx: int):
             "worker": worker,
             "dangers": org_dangers,
             "existing": existing,
-            "degree_info": DEGREE_INFO,
-            "chance_info": CHANCE_INFO,
-            "coeff_info": COEFF_INFO
+            "degree_info": get_degree_info(),
+            "chance_info": get_chance_info(),
+            "coeff_info": get_coeff_info()
         }
     )
 
@@ -980,3 +994,150 @@ def doc_templates_view(file_key: str):
         media_type="application/pdf",
         headers={"Content-Disposition": "inline"}
     )
+
+@router.get("/settings/risks")
+def risk_settings_page(request: Request):
+    return templates.TemplateResponse("settings_risks.html", {"request": request})
+
+
+@router.get("/settings/descriptions")
+def settings_descriptions_page(request: Request, saved: str = ""):
+    return templates.TemplateResponse(
+        "settings_descriptions.html",
+        {
+            "request": request,
+            "degree_info": get_degree_info(),
+            "chance_info": get_chance_info(),
+            "coeff_info": get_coeff_info(),
+            "control_info": get_control_info(),
+            "saved": saved == "1",
+        }
+    )
+
+
+@router.post("/settings/descriptions")
+async def settings_descriptions_save(request: Request):
+    form = await request.form()
+
+    degree_info = {}
+    chance_info = {}
+    coeff_info = {}
+    control_keys = {}
+    control_values = {}
+
+    for key, value in form.items():
+        if key.startswith("degree_"):
+            idx = key.replace("degree_", "", 1)
+            degree_info[idx] = value.strip()
+        elif key.startswith("chance_"):
+            idx = key.replace("chance_", "", 1)
+            chance_info[idx] = value.strip()
+        elif key.startswith("coeff_"):
+            idx = key.replace("coeff_", "", 1)
+            coeff_info[idx] = value.strip()
+        elif key.startswith("control_key_"):
+            idx = key.replace("control_key_", "", 1)
+            control_keys[idx] = value
+        elif key.startswith("control_value_"):
+            idx = key.replace("control_value_", "", 1)
+            control_values[idx] = value.strip()
+
+    control_info = {}
+    for idx, level in control_keys.items():
+        control_info[level] = control_values.get(idx, "")
+
+    if degree_info:
+        save_customization_section("DEGREE_INFO", degree_info)
+    if chance_info:
+        save_customization_section("CHANCE_INFO", chance_info)
+    if coeff_info:
+        save_customization_section("COEFF_INFO", coeff_info)
+    if control_info:
+        save_customization_section("CONTROL_INFO", control_info)
+
+    return RedirectResponse(url="/settings/descriptions?saved=1", status_code=303)
+
+
+@router.get("/settings/ranges")
+def settings_ranges_page(request: Request, saved: str = "", error: str = ""):
+    return templates.TemplateResponse(
+        "settings_ranges.html",
+        {
+            "request": request,
+            "summary_info": get_summary_info_dict(),
+            "summary_info_aplication": get_summary_info_aplication_dict(),
+            "saved": saved == "1",
+            "error": error,
+        }
+    )
+
+
+@router.post("/settings/ranges")
+async def settings_ranges_save(request: Request):
+    form = await request.form()
+
+    summary_thresholds = {}
+    summary_levels = {}
+    aplication_thresholds = {}
+    aplication_levels = {}
+
+    for key, value in form.items():
+        if key.startswith("summary_threshold_"):
+            idx = key.replace("summary_threshold_", "", 1)
+            summary_thresholds[idx] = value.strip()
+        elif key.startswith("summary_level_"):
+            idx = key.replace("summary_level_", "", 1)
+            summary_levels[idx] = value
+        elif key.startswith("aplication_threshold_"):
+            idx = key.replace("aplication_threshold_", "", 1)
+            aplication_thresholds[idx] = value.strip()
+        elif key.startswith("aplication_level_"):
+            idx = key.replace("aplication_level_", "", 1)
+            aplication_levels[idx] = value
+
+    try:
+        summary_info = {}
+        for idx, threshold_str in summary_thresholds.items():
+            threshold = float(threshold_str.replace(",", "."))
+            level = summary_levels.get(idx, "")
+            summary_info[str(threshold)] = level
+
+        aplication_info = {}
+        for idx, threshold_str in aplication_thresholds.items():
+            threshold = float(threshold_str.replace(",", "."))
+            level = aplication_levels.get(idx, "")
+            aplication_info[str(threshold)] = level
+    except ValueError:
+        return RedirectResponse(
+            url="/settings/ranges?error=invalid_number",
+            status_code=303
+        )
+
+    summary_keys = sorted([float(k) for k in summary_info.keys()])
+    for i in range(len(summary_keys) - 1):
+        if summary_keys[i] >= summary_keys[i + 1]:
+            return RedirectResponse(
+                url="/settings/ranges?error=order",
+                status_code=303
+            )
+
+    aplication_keys = sorted([float(k) for k in aplication_info.keys()])
+    for i in range(len(aplication_keys) - 1):
+        if aplication_keys[i] >= aplication_keys[i + 1]:
+            return RedirectResponse(
+                url="/settings/ranges?error=order",
+                status_code=303
+            )
+
+    save_customization_section("SUMMARY_INFO", summary_info)
+    save_customization_section("SUMMARY_INFO_APLICATION", aplication_info)
+
+    return RedirectResponse(url="/settings/ranges?saved=1", status_code=303)
+
+
+@router.post("/settings/reset")
+async def settings_reset(request: Request):
+    reset_all_customizations()
+    form = await request.form()
+    return_url = form.get("return_url", "/")
+    return RedirectResponse(url=return_url, status_code=303)

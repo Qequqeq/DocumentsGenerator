@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
-from RisksAndDangers import *
+from .RisksAndDangers import RiskTemplate, DangerTemplate, DANGER_DATABASE
+from .customization import (
+    get_degree_info,
+    get_chance_info,
+    get_coeff_info,
+    get_summary_info,
+    get_summary_info_aplication,
+    get_control_info,
+)
 
 
 def get_org_dangers(selected_danger_ids: list[int]) -> list[DangerTemplate]:
@@ -27,11 +35,11 @@ def get_worker_risks(workName, org_dangers: list[DangerTemplate], risk_inputs: d
                     risk_number = risk.risk_number,
                     risk_name = risk.risk_name,
                     degree = deg,
-                    degree_info = DEGREE_INFO[deg],
+                    degree_info = get_degree_info()[deg],
                     chance = ch,
-                    chance_info = CHANCE_INFO[ch],
+                    chance_info = get_chance_info()[ch],
                     coefficient = kef,
-                    coefficient_info = COEFF_INFO[kef],
+                    coefficient_info = get_coeff_info()[kef],
                     summary = res,
                     summary_info = get_summary_info(res),
                     danger_group_number = danger.danger_number,

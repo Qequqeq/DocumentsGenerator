@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Настройка диапазонов{% endblock %}
+
+{% block content %}
+
+<header class="mb-8">
+    <div class="flex items-center gap-3 mb-4">
+        <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Настройки</span>
+    </div>
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Настройка диапазонов</h1>
+    <p class="text-base text-slate-500 max-w-xl">
+        Отредактируйте числовые пороги, по которым определяется уровень риска. Тексты уровней риска фиксированы и не подлежат изменению. Изменения применятся при следующей генерации документов.
+    </p>
+</header>
+
+{% if saved %}
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-green-500 px-5 py-4">
+    <p class="text-sm font-semibold text-slate-900 mb-1">Сохранено</p>
+    <p class="text-sm text-slate-600">Изменения применятся при следующей генерации документов.</p>
+</div>
+{% endif %}
+
+{% if error == 'invalid_number' %}
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-red-500 px-5 py-4">
+    <p class="text-sm font-semibold text-slate-900 mb-1">Ошибка</p>
+    <p class="text-sm text-slate-600">Все пороги должны быть числами.</p>
+</div>
+{% endif %}
+
+{% if error == 'order' %}
+<div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-red-500 px-5 py-4">
+    <p class="text-sm font-semibold text-slate-900 mb-1">Ошибка</p>
+    <p class="text-sm text-slate-600">Пороги должны идти строго по возрастанию: E, D, C, B, A.</p>
+</div>
+{% endif %}
+
+<form method="post" action="/settings/ranges">
+
+    <section class="mb-12">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">1.</span>
+            <h2 class="text-base font-semibold text-slate-900">Шкала оценки рисков (основная)</h2>
+        </div>
+        <div class="space-y-4">
+            {% for threshold, level in summary_info.items() %}
+            <div class="bg-white border border-slate-200 p-5 flex items-center gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-900 mb-2">Порог для уровня</label>
+                    <input type="hidden" name="summary_level_{{ loop.index0 }}" value="{{ level }}">
+                    <p class="text-sm text-slate-600">{{ level }}</p>
+                </div>
+                <div class="w-40">
+                    <label class="block text-xs font-medium text-slate-500 mb-2">Максимальное значение</label>
+                    <input type="number" step="0.1" min="0"
+                           name="summary_threshold_{{ loop.index0 }}"
+                           value="{{ threshold }}"
+                           required
+                           class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors tabular-nums">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="mb-12">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">2.</span>
+            <h2 class="text-base font-semibold text-slate-900">Шкала оценки рисков (для приложения)</h2>
+        </div>
+        <div class="space-y-4">
+            {% for threshold, level in summary_info_aplication.items() %}
+            <div class="bg-white border border-slate-200 p-5 flex items-center gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-900 mb-2">Порог для уровня</label>
+                    <input type="hidden" name="aplication_level_{{ loop.index0 }}" value="{{ level }}">
+                    <p class="text-sm text-slate-600">{{ level }}</p>
+                </div>
+                <div class="w-40">
+                    <label class="block text-xs font-medium text-slate-500 mb-2">Максимальное значение</label>
+                    <input type="number" step="0.1" min="0"
+                           name="aplication_threshold_{{ loop.index0 }}"
+                           value="{{ threshold }}"
+                           required
+                           class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors tabular-nums">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-3 pt-8 border-t border-slate-200">
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Сохранить изменения
+        </button>
+        <a href="/"
+           class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            В главное меню
+        </a>
+    </div>
+
+</form>
+
+<form method="post" action="/settings/reset" class="mt-6">
+    <input type="hidden" name="return_url" value="/settings/ranges">
+    <button type="submit"
+            class="bg-white border border-red-300 hover:border-red-500 hover:bg-red-50 text-red-600 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+        Восстановить значения по умолчанию
+    </button>
+    <p class="text-xs text-slate-400 mt-3">Полностью очищает все настройки описаний и диапазонов</p>
+</form>
+
+{% endblock %}

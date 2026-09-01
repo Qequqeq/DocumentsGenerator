@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from models import *
+from src.models import *
 import pandas as pd
 import pathlib as path
 

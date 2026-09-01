@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 from docxtpl import DocxTemplate
 import re
-from getWorkerRisks import *
-from RisksAndDangers import *
+#from .RisksAndDangers import *
+from .customization import (
+    get_degree_info,
+    get_chance_info,
+    get_coeff_info,
+    get_summary_info,
+    get_summary_info_aplication,
+    get_control_info,
+)
 from pathlib import Path
 
-def generate_worker_card(template_path, doc_date, org_data, workName, output_dir: Path = Path(".")):
+def generate_worker_card(template_path, doc_date, org_data, workName, output_dir: Path = Path("..")):
     doc = DocxTemplate(template_path)
     danger_groups_list = []
     if workName.workerDangers:
@@ -63,7 +70,7 @@ def generate_worker_card(template_path, doc_date, org_data, workName, output_dir
             'TOTAL': f"{workName.workerTotal:.1f}".replace('.', ','),
             'com_chairman': org_data.chairman.full_name,
             'RiskKlass': workName.summary_info,
-            'controlInfo': CONTROL_INFO[workName.summary_info],
+            'controlInfo': get_control_info()[workName.summary_info],
             'documentDate': doc_date,
             'comission': comission,
             'division': workName.division,
@@ -206,7 +213,7 @@ def generate_report(
 
     pos_summary = []
     for worker in people_data:
-        full_control_info = CONTROL_INFO[worker.summary_info].split(" ")
+        full_control_info = get_control_info()[worker.summary_info].split(" ")
         control_info = full_control_info[0] + " " + full_control_info[1]
 
         pos_summary.append({
