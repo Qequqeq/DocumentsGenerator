@@ -210,3 +210,5 @@ temp/*
 .idea/
 *.swp
 .venv/
+/logs
+temp/autosave/

@@ -2,6 +2,7 @@
 from src.models import *
 import pandas as pd
 import pathlib as path
+from typing import Optional
 
 
 def parce_people_data(person_path='', data_frame=pd.DataFrame()):

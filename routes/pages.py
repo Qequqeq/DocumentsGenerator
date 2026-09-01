@@ -45,6 +45,7 @@ import io
 from pathlib import Path
 from src.validator import validate_org_file, validate_people_file, validate_date
 from src.storage import save_job_data
+from src.logger import log_info, log_error, log_warning
 
 router = APIRouter()
 
@@ -71,6 +72,7 @@ def safe_filename(name: str) -> str:
 def main_menu(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @router.get("/upload")
 def upload_form(request: Request):
     default_date = date.today().strftime("%d.%m.%Y")
@@ -81,6 +83,7 @@ def upload_form(request: Request):
             "default_date": default_date
         }
     )
+
 
 @router.get("/create-template")
 def create_template_form(request: Request):
@@ -96,6 +99,7 @@ def create_template_form(request: Request):
             "existing": {}
         }
     )
+
 
 @router.post("/create-template")
 async def create_template(request: Request):
@@ -125,7 +129,7 @@ async def create_template(request: Request):
             elif prefix == 'kef':
                 inputs[d_id][r_id]['kef'] = float(val.replace(',', '.'))
         except Exception as e:
-            print(f"Ошибка парсинга {key}: {e}")
+            log_error("PARSER", e, {"key": key, "value": value})
 
     template_data = {
         "template_name": translit(template_name),
@@ -140,15 +144,65 @@ async def create_template(request: Request):
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+
 @router.get("/upload_project")
-async def upload_project(request: Request):
+async def upload_project_page(request: Request):
     default_date = date.today().strftime("%d.%m.%Y")
+
+    recent_projects = []
+    try:
+        if UPLOAD_DIR_SEC.exists():
+            for job_file in UPLOAD_DIR_SEC.glob("*.json"):
+                try:
+                    job_id = job_file.stem
+                    with open(job_file, "r", encoding="utf-8") as f:
+                        job_data = json.load(f)
+
+                    org_data = job_data.get("org_data", {})
+                    org_name = org_data.get("full_name", "Неизвестная организация") if isinstance(org_data,
+                                                                                                   dict) else "Неизвестная организация"
+                    doc_date = job_data.get("doc_date", "Дата не указана")
+                    workers_count = len(job_data.get("people_data", []))
+                    generated_count = len(job_data.get("generated_cards", set()))
+
+                    if generated_count == 0:
+                        status = "Не начато"
+                        status_class = "text-slate-500"
+                    elif generated_count >= workers_count:
+                        status = "Завершён"
+                        status_class = "text-green-600"
+                    else:
+                        status = f"В работе ({generated_count}/{workers_count})"
+                        status_class = "text-blue-600"
+
+                    recent_projects.append({
+                        "job_id": job_id,
+                        "org_name": org_name,
+                        "doc_date": doc_date,
+                        "workers_count": workers_count,
+                        "generated_count": generated_count,
+                        "status": status,
+                        "status_class": status_class,
+                        "modified_time": job_file.stat().st_mtime
+                    })
+                except Exception as e:
+                    log_error("STORAGE", e, {"file": str(job_file)})
+                    continue
+
+            recent_projects.sort(key=lambda x: x["modified_time"], reverse=True)
+            recent_projects = recent_projects[:3]
+
+            log_info("STORAGE", f"Загружено {len(recent_projects)} последних проектов")
+    except Exception as e:
+        log_error("STORAGE", e, {"action": "load_recent_projects"})
+
     return templates.TemplateResponse(
         "upload_project.html",
         {
             "request": request,
-            "default_date": default_date
-         }
+            "default_date": default_date,
+            "recent_projects": recent_projects
+        }
     )
 
 
@@ -170,6 +224,7 @@ async def upload_project(
     rep_template_path = job_dir / "rep_template.docx"
     people_path = job_dir / "people.xlsx"
     org_path = job_dir / "org.xlsx"
+
     for upload, path in [
         (rep_template_file, rep_template_path),
         (card_template_file, card_template_path),
@@ -193,6 +248,7 @@ async def upload_project(
         if org_path.exists():
             org_path.unlink()
         file_errors.extend(org_errors)
+
     if not is_date_valid or file_errors:
         return templates.TemplateResponse(
             "form.html",
@@ -269,7 +325,7 @@ async def upload_project(
             workersdd = find_worker(position)
 
             if not workersdd:
-                print(f"Предупреждение: работник с должностью '{position}' не найден. Пропускаем.")
+                log_warning("TEMPLATE", f"Работник с должностью '{position}' не найден. Пропускаем.", {"job_id": job_id})
                 continue
 
             for worker in workersdd:
@@ -294,7 +350,6 @@ async def upload_project(
                             "kef": values.get("kef", 0.0)
                         }
 
-
                 job["risk_inputs"][position] = inputs
                 job["risk_inputs"][worker.ID] = inputs
 
@@ -314,15 +369,18 @@ async def upload_project(
                 job["generated_cards"].add(worker.ID)
 
         except Exception as e:
-            print(f"Ошибка при обработке файла {json_file}: {e}")
+            log_error("TEMPLATE", e, {"file": str(json_file), "job_id": job_id})
             continue
+
     for worker in workers:
         inputs = job["risk_inputs"].get(worker.ID)
         if inputs:
             get_worker_risks(worker, job["org_dangers"], inputs)
+
     shutil.rmtree(extract_dir, ignore_errors=True)
     if zip_path.exists():
         zip_path.unlink()
+
     save_job_data(job_id, job)
 
     return templates.TemplateResponse(
@@ -335,6 +393,37 @@ async def upload_project(
             "generated_cards": job["generated_cards"]
         }
     )
+
+
+@router.get("/load-project/{job_id}")
+def load_existing_project(request: Request, job_id: str):
+    try:
+        job = load_job(job_id)
+        workers = job["people_data"]
+
+        for worker in workers:
+            inputs = job["risk_inputs"].get(worker.ID, {})
+            if inputs:
+                get_worker_risks(worker, job["org_dangers"], inputs)
+
+        log_info("STORAGE", f"Проект {job_id} загружен для продолжения работы")
+
+        return templates.TemplateResponse(
+            "select_worker_risks.html",
+            {
+                "request": request,
+                "workers": workers,
+                "job_id": job_id,
+                "risk_inputs": job.get("risk_inputs", {}),
+                "generated_cards": job.get("generated_cards", set())
+            }
+        )
+    except KeyError:
+        log_error("STORAGE", KeyError(f"Job {job_id} not found"), {"action": "load_project"})
+        raise HTTPException(status_code=404, detail="Проект не найден")
+    except Exception as e:
+        log_error("STORAGE", e, {"job_id": job_id, "action": "load_project"})
+        raise HTTPException(status_code=500, detail="Ошибка при загрузке проекта")
 
 
 @router.get("/select-dangers")
@@ -357,6 +446,7 @@ def show_select_dangers(request: Request, job_id: str):
             "generated_cards": job.get("generated_cards", set())
         }
     )
+
 
 @router.post("/upload")
 async def upload_files(
@@ -399,6 +489,7 @@ async def upload_files(
         if org_path.exists():
             org_path.unlink()
         file_errors.extend(org_errors)
+
     if not is_date_valid or file_errors:
         return templates.TemplateResponse(
             "form.html",
@@ -417,7 +508,7 @@ async def upload_files(
         people_path=people_path,
         org_path=org_path,
         doc_date=doc_date,
-        org_df = df_org,
+        org_df=df_org,
         people_df=df_people
     )
 
@@ -443,6 +534,7 @@ async def upload_files(
         }
     )
 
+
 @router.post("/select-dangers")
 async def select_dangers(
         request: Request,
@@ -454,7 +546,6 @@ async def select_dangers(
     all_danger_ids = [DANGER_DATABASE[danger].danger_number for danger in DANGER_DATABASE.keys()]
 
     job["selected_danger_ids"] = all_danger_ids
-
     job["org_dangers"] = get_org_dangers(job["selected_danger_ids"])
 
     job["generated_cards"] = set()
@@ -522,6 +613,7 @@ def worker_risks_form(request: Request, job_id: str, worker_idx: int):
         }
     )
 
+
 @router.post("/save-as-template/{job_id}/{worker_idx}")
 async def save_as_template(request: Request, job_id: str, worker_idx: int):
     job = load_job(job_id)
@@ -552,7 +644,7 @@ async def save_as_template(request: Request, job_id: str, worker_idx: int):
             elif prefix == 'kef':
                 inputs[d_id][r_id]['kef'] = float(val.replace(',', '.'))
         except Exception as e:
-            print(f"Ошибка парсинга {key}: {e}")
+            log_error("PARSER", e, {"key": key, "value": value})
 
     template_data = {
         "template_name": safe_filename(translit(worker.position)).replace(" ", "_"),
@@ -600,7 +692,8 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
             elif prefix == 'kef':
                 inputs[d_id][r_id]['kef'] = float(val.replace(',', '.'))
         except Exception as e:
-            print(f"Ошибка парсинга {key}: {e}")
+            log_error("PARSER", e, {"key": key, "value": value})
+            continue
 
     job["risk_inputs"][worker.ID] = inputs
     job["generated_cards"].add(worker.ID)
@@ -608,18 +701,30 @@ async def save_worker_risks(request: Request, job_id: str, worker_idx: int):
     output_dir = UPLOAD_DIR / job_id / "output"
     output_dir.mkdir(exist_ok=True)
 
-    get_worker_risks(worker, job["org_dangers"], inputs)
-    generate_worker_card(
-        template_path=job["card_template_path"],
-        doc_date=job["doc_date"],
-        org_data=job["org_data"],
-        workName=worker,
-        output_dir=output_dir
-    )
+    try:
+        get_worker_risks(worker, job["org_dangers"], inputs)
+        generate_worker_card(
+            template_path=job["card_template_path"],
+            doc_date=job["doc_date"],
+            org_data=job["org_data"],
+            workName=worker,
+            output_dir=output_dir
+        )
+        log_info("GENERATION", f"Сгенерирована карта для: {worker.position}", {
+            "job_id": job_id,
+            "worker_id": worker.ID
+        })
+    except Exception as e:
+        log_error("GENERATION", e, {
+            "job_id": job_id,
+            "worker_position": worker.position,
+            "worker_id": worker.ID
+        })
+        raise
 
-    print(f"Сгенерирована карта для: {worker.position}")
     save_job_data(job_id, job)
-    return RedirectResponse(url=f"/select-dangers?job_id={job_id }", status_code=303)
+    return RedirectResponse(url=f"/select-dangers?job_id={job_id}", status_code=303)
+
 
 @router.post("/apply-template/{job_id}/{worker_idx}")
 async def apply_template(
@@ -663,7 +768,6 @@ async def apply_template(
                 "kef": values.get("kef", 0.0)
             }
 
-
     job["risk_inputs"][worker.ID] = inputs
     job["generated_cards"].add(worker.ID)
     get_worker_risks(worker, job["org_dangers"], inputs)
@@ -695,11 +799,13 @@ async def apply_template_bulk(
     content = await template_file.read()
     try:
         template_data = json.loads(content)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        log_error("TEMPLATE", e, {"job_id": job_id, "error": "Invalid JSON"})
         raise HTTPException(status_code=400, detail="Некорректный JSON файл")
 
     risks_data = template_data.get("risks")
     if not isinstance(risks_data, dict):
+        log_error("TEMPLATE", ValueError("Missing risks field"), {"job_id": job_id})
         raise HTTPException(status_code=400, detail="Отсутствует поле 'risks'")
 
     inputs = {}
@@ -724,10 +830,12 @@ async def apply_template_bulk(
     output_dir.mkdir(exist_ok=True)
 
     applied_count = 0
+    failed_count = 0
     for idx_str in worker_indices:
         try:
             worker_idx = int(idx_str)
             if worker_idx < 0 or worker_idx >= len(workers):
+                log_warning("TEMPLATE", f"Invalid worker index: {worker_idx}", {"job_id": job_id})
                 continue
 
             worker = workers[worker_idx]
@@ -743,16 +851,29 @@ async def apply_template_bulk(
                 output_dir=output_dir
             )
             applied_count += 1
-        except (ValueError, TypeError):
+        except Exception as e:
+            log_error("TEMPLATE", e, {
+                "job_id": job_id,
+                "worker_idx": idx_str
+            })
+            failed_count += 1
             continue
+
+    log_info("TEMPLATE", f"Шаблон применён к {applied_count} работникам", {
+        "job_id": job_id,
+        "applied": applied_count,
+        "failed": failed_count
+    })
 
     save_job_data(job_id, job)
 
     return RedirectResponse(url=f"/select-dangers?job_id={job_id}", status_code=303)
 
+
 def sanitize_filename(name: str) -> str:
     name = translit(name)
-    return re.sub(r'[<>:"/\\|?*]', '_', name)
+    return re.sub(r'[<>:"/|?*]', '_', name)
+
 
 @router.get("/save-project/{job_id}")
 async def save_project(request: Request, job_id: str):
@@ -822,26 +943,36 @@ def generate(request: Request, job_id: str):
     output_dir = UPLOAD_DIR / job_id / "output"
     output_dir.mkdir(exist_ok=True)
 
-    report_template = job.get("rep_template_path")
-    if report_template and report_template.exists():
-        generate_report(
-            report_template_path=report_template,
-            output_dir=output_dir,
-            org_data=job["org_data"],
-            people_data=job["people_data"],
-            doc_date=job["doc_date"]
-        )
-    else:
-        print("Шаблон отчёта отсутствует — отчёт не создан")
+    try:
+        report_template = job.get("rep_template_path")
+        if report_template and report_template.exists():
+            generate_report(
+                report_template_path=report_template,
+                output_dir=output_dir,
+                org_data=job["org_data"],
+                people_data=job["people_data"],
+                doc_date=job["doc_date"]
+            )
+            log_info("GENERATION", "Отчёт успешно сгенерирован", {"job_id": job_id})
+        else:
+            log_warning("GENERATION", "Шаблон отчёта отсутствует — отчёт не создан", {"job_id": job_id})
 
-    zip_path = UPLOAD_DIR / f"{job_id}_cards.zip"
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for doc_file in output_dir.glob("Карта*.docx"):
-            zipf.write(doc_file, arcname=doc_file.name)
+        zip_path = UPLOAD_DIR / f"{job_id}_cards.zip"
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            cards_count = 0
+            for doc_file in output_dir.glob("Карта*.docx"):
+                zipf.write(doc_file, arcname=doc_file.name)
+                cards_count += 1
 
-        report_file = output_dir / "Отчет.docx"
-        if report_file.exists():
-            zipf.write(report_file, arcname="Отчет.docx")
+            report_file = output_dir / "Отчет.docx"
+            if report_file.exists():
+                zipf.write(report_file, arcname="Отчет.docx")
+
+        log_info("GENERATION", f"Архив создан: {cards_count} карт", {"job_id": job_id})
+
+    except Exception as e:
+        log_error("GENERATION", e, {"job_id": job_id})
+        raise
 
     return templates.TemplateResponse(
         "result.html",
@@ -891,18 +1022,19 @@ async def shutdown():
             if UPLOAD_DIR_SEC.exists():
                 shutil.rmtree(UPLOAD_DIR_SEC, ignore_errors=True)
         except Exception as e:
-            print(f"Ошибка при удалении временных файлов: {e}")
+            log_error("SHUTDOWN", e, {"action": "cleanup_all_temp_files"})
 
     cleanup_all_temp_files()
 
     async def stop_server():
         await asyncio.sleep(1)
-        print("Остановка сервера...")
+        log_info("SHUTDOWN", "Остановка сервера...")
         os.kill(os.getpid(), signal.SIGTERM)
 
     await asyncio.create_task(stop_server())
 
     return {"status": "shutting down"}
+
 
 ORG_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "org_templates"
 
@@ -914,6 +1046,7 @@ ORG_TEMPLATE_FILES = {
     "org_example": "organization_card_example.xlsx",
     "org_pdf": "organization_card_example.pdf",
 }
+
 
 @router.get("/org_templates")
 def org_templates_page(request: Request):
@@ -999,6 +1132,7 @@ def doc_templates_view(file_key: str):
         media_type="application/pdf",
         headers={"Content-Disposition": "inline"}
     )
+
 
 @router.get("/settings/risks")
 def risk_settings_page(request: Request, saved: str = ""):
