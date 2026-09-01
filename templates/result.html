@@ -33,14 +33,20 @@
 
 <section class="mb-10">
     <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
-        <span class="text-sm font-bold text-blue-600 tabular-nums">1.</span>
+        <span class="text-sm font-bold text-blue-600 tabular-nums">01</span>
         <h2 class="text-base font-semibold text-slate-900">Результат работы</h2>
     </div>
-    <p class="text-sm text-slate-500 mb-4">Архив содержит сформированные карты сотрудников и сводный отчёт по организации.</p>
-    <a href="/download/{{ job_id }}"
-       class="inline-block bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
-        Скачать карты и отчёт
-    </a>
+    <p class="text-sm text-slate-500 mb-4">Архив содержит все сформированные карты рисков и финальный сводный отчёт по организации.</p>
+    <div class="flex flex-wrap items-center gap-3">
+        <a href="/download/{{ job_id }}"
+           class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Скачать карты и отчёт
+        </a>
+        <a href="/select-dangers?job_id={{ job_id }}" id="backBtn"
+           class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Вернуться к списку работников
+        </a>
+    </div>
 </section>
 
 <section class="mb-10">
@@ -203,6 +209,20 @@
             showModal(goHome);
         }
     });
+
+    var backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', function(e) {
+            var goBack = function() {
+                sessionStorage.removeItem(storageKey);
+                window.location.href = '/select-dangers?job_id={{ job_id }}';
+            };
+            if (!projectSaved) {
+                e.preventDefault();
+                showModal(goBack);
+            }
+        });
+    }
 })();
 </script>
 
