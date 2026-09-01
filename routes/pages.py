@@ -936,9 +936,47 @@ def risk_templates(request: Request):
     )
 
 
+DOC_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "doc_templates"
+
+DOC_TEMPLATE_FILES = {
+    "card_blank": "card_template.docx",
+    "card_example": "card_example.pdf",
+    "card_blank_no_jdi": "card_template_no_jdi.docx",
+    "card_example_no_jdi": "card_example_no_jdi.pdf",
+    "report_blank": "report_template.docx",
+    "report_example": "report_example.pdf",
+    "report_blank_no_jdi": "report_template_no_jdi.docx",
+    "report_example_no_jdi": "report_example_no_jdi.pdf",
+}
+
+
 @router.get("/doc_templates")
-def doc_templates(request: Request):
+def doc_templates_page(request: Request):
     return templates.TemplateResponse(
         "doc_templates.html",
         {"request": request}
+    )
+
+
+@router.get("/doc_templates/download/{file_key}")
+def doc_templates_download(file_key: str):
+    if file_key not in DOC_TEMPLATE_FILES:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    file_path = DOC_TEMPLATES_DIR / DOC_TEMPLATE_FILES[file_key]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(file_path, filename=DOC_TEMPLATE_FILES[file_key])
+
+
+@router.get("/doc_templates/view/{file_key}")
+def doc_templates_view(file_key: str):
+    if file_key not in DOC_TEMPLATE_FILES:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    file_path = DOC_TEMPLATES_DIR / DOC_TEMPLATE_FILES[file_key]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "inline"}
     )
