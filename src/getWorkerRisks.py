@@ -5,8 +5,8 @@ from .customization import (
     get_chance_info,
     get_coeff_info,
     get_summary_info,
-    get_summary_info_aplication,
-    get_control_info,
+    get_management_measures,
+
 )
 
 
@@ -45,7 +45,7 @@ def get_worker_risks(workName, org_dangers: list[DangerTemplate], risk_inputs: d
                     danger_group_number = danger.danger_number,
                     danger_group_name = danger.danger_name,
                     control_periodic = risk.control_periodic,
-                    management_measures = risk.management_measures
+                    management_measures = get_management_measures(risk.risk_number, risk.management_measures)
                 ))
                 sm += res
                 ttl += res

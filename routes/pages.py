@@ -27,8 +27,13 @@ from src.customization import (
     get_summary_info_dict,
     get_summary_info_aplication_dict,
     get_control_info,
-    save_customization_section,
-    reset_all_customizations,
+    get_management_measures,
+    save_descriptions,
+    save_ranges,
+    save_management_measures,
+    reset_descriptions,
+    reset_ranges,
+    reset_risks,
     DEFAULT_SUMMARY_INFO,
     DEFAULT_SUMMARY_INFO_APLICATION,
 )
@@ -996,8 +1001,50 @@ def doc_templates_view(file_key: str):
     )
 
 @router.get("/settings/risks")
-def risk_settings_page(request: Request):
-    return templates.TemplateResponse("settings_risks.html", {"request": request})
+def risk_settings_page(request: Request, saved: str = ""):
+    all_dangers = list(DANGER_DATABASE.values())
+
+    dangers_with_measures = []
+    for danger in all_dangers:
+        risks_data = []
+        for risk in danger.risks:
+            measures = get_management_measures(risk.risk_number, risk.management_measures)
+            risks_data.append({
+                "risk_number": risk.risk_number,
+                "risk_name": risk.risk_name,
+                "management_measures": measures,
+                "measures_text": "\n".join(measures) if measures else ""
+            })
+        dangers_with_measures.append({
+            "danger_number": danger.danger_number,
+            "danger_name": danger.danger_name,
+            "risks": risks_data
+        })
+
+    return templates.TemplateResponse(
+        "settings_risks.html",
+        {
+            "request": request,
+            "dangers": dangers_with_measures,
+            "saved": saved == "1",
+        }
+    )
+
+
+@router.post("/settings/risks")
+async def risk_settings_save(request: Request):
+    form = await request.form()
+
+    measures_data = {}
+    for key, value in form.items():
+        if key.startswith("measures_"):
+            risk_number = key.replace("measures_", "", 1)
+            lines = [line.strip() for line in value.strip().split("\n") if line.strip()]
+            measures_data[risk_number] = lines
+
+    save_management_measures(measures_data)
+
+    return RedirectResponse(url="/settings/risks?saved=1", status_code=303)
 
 
 @router.get("/settings/descriptions")
@@ -1046,14 +1093,18 @@ async def settings_descriptions_save(request: Request):
     for idx, level in control_keys.items():
         control_info[level] = control_values.get(idx, "")
 
+    data_to_save = {}
     if degree_info:
-        save_customization_section("DEGREE_INFO", degree_info)
+        data_to_save["DEGREE_INFO"] = degree_info
     if chance_info:
-        save_customization_section("CHANCE_INFO", chance_info)
+        data_to_save["CHANCE_INFO"] = chance_info
     if coeff_info:
-        save_customization_section("COEFF_INFO", coeff_info)
+        data_to_save["COEFF_INFO"] = coeff_info
     if control_info:
-        save_customization_section("CONTROL_INFO", control_info)
+        data_to_save["CONTROL_INFO"] = control_info
+
+    if data_to_save:
+        save_descriptions(data_to_save)
 
     return RedirectResponse(url="/settings/descriptions?saved=1", status_code=303)
 
@@ -1129,15 +1180,27 @@ async def settings_ranges_save(request: Request):
                 status_code=303
             )
 
-    save_customization_section("SUMMARY_INFO", summary_info)
-    save_customization_section("SUMMARY_INFO_APLICATION", aplication_info)
+    save_ranges({
+        "SUMMARY_INFO": summary_info,
+        "SUMMARY_INFO_APLICATION": aplication_info,
+    })
 
     return RedirectResponse(url="/settings/ranges?saved=1", status_code=303)
 
 
-@router.post("/settings/reset")
-async def settings_reset(request: Request):
-    reset_all_customizations()
-    form = await request.form()
-    return_url = form.get("return_url", "/")
-    return RedirectResponse(url=return_url, status_code=303)
+@router.post("/settings/reset-descriptions")
+async def settings_reset_descriptions(request: Request):
+    reset_descriptions()
+    return RedirectResponse(url="/settings/descriptions", status_code=303)
+
+
+@router.post("/settings/reset-ranges")
+async def settings_reset_ranges(request: Request):
+    reset_ranges()
+    return RedirectResponse(url="/settings/ranges", status_code=303)
+
+
+@router.post("/settings/reset-risks")
+async def settings_reset_risks(request: Request):
+    reset_risks()
+    return RedirectResponse(url="/settings/risks", status_code=303)

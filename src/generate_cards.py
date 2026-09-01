@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 from docxtpl import DocxTemplate
 import re
-#from .RisksAndDangers import *
 from .customization import (
-    get_degree_info,
-    get_chance_info,
-    get_coeff_info,
-    get_summary_info,
     get_summary_info_aplication,
     get_control_info,
 )
@@ -94,14 +89,14 @@ def generate_report(
         people_data,
         doc_date: str
 ):
-    def risk_in_list(risk, list):
-        for r in list:
+    def risk_in_list(risk, lst):
+        for r in lst:
             if r['number'] == risk['number'] and r['name'] == risk['name']:
                 return True
         return False
 
-    def danger_in_list(dang, list):
-        for d in list:
+    def danger_in_list(dang, lst):
+        for d in lst:
             if d['group_id'] == dang['group_id'] and d['group_name'] == dang['group_name']:
                 risks = []
                 for risk in d['risk_list']:

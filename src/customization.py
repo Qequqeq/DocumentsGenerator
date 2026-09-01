@@ -3,7 +3,10 @@ from pathlib import Path
 from typing import Dict
 
 CUSTOMIZATION_DIR = Path("customization")
-CUSTOMIZATION_FILE = CUSTOMIZATION_DIR / "customizations.json"
+DESCRIPTIONS_FILE = CUSTOMIZATION_DIR / "descriptions.json"
+RANGES_FILE = CUSTOMIZATION_DIR / "ranges.json"
+RISKS_FILE = CUSTOMIZATION_DIR / "risks.json"
+
 
 DEFAULT_DEGREE_INFO: Dict[int, str] = {
     1: 'Пострадавшему не требуется оказание медицинской помощи в организациях здравоохранения (микроповреждение/микротравма) /травма, требующая оказания простых мер первой помощи (легкие ушибы, синяки и т.п.) / измененное функциональное состояние организма работника восстанавливается во время регламентированного отдыха или к началу следующего рабочего дня (смены)',
@@ -53,24 +56,27 @@ DEFAULT_CONTROL_INFO: Dict[str, str] = {
     'A (Крайне высокий риск)': 'Непрерывный контроль по специальному регламенту'
 }
 
-def _load_raw() -> dict:
-    if CUSTOMIZATION_FILE.exists():
+
+
+def _load_file(file_path: Path) -> dict:
+    if file_path.exists():
         try:
-            with open(CUSTOMIZATION_FILE, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError):
             return {}
     return {}
 
 
-def _save_raw(data: dict) -> None:
+def _save_file(file_path: Path, data: dict) -> None:
     CUSTOMIZATION_DIR.mkdir(parents=True, exist_ok=True)
-    with open(CUSTOMIZATION_FILE, "w", encoding="utf-8") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+
 def get_degree_info() -> Dict[int, str]:
-    custom = _load_raw().get("DEGREE_INFO", {})
+    custom = _load_file(DESCRIPTIONS_FILE).get("DEGREE_INFO", {})
     result = dict(DEFAULT_DEGREE_INFO)
     for key, value in custom.items():
         result[int(key)] = value
@@ -78,7 +84,7 @@ def get_degree_info() -> Dict[int, str]:
 
 
 def get_chance_info() -> Dict[int, str]:
-    custom = _load_raw().get("CHANCE_INFO", {})
+    custom = _load_file(DESCRIPTIONS_FILE).get("CHANCE_INFO", {})
     result = dict(DEFAULT_CHANCE_INFO)
     for key, value in custom.items():
         result[int(key)] = value
@@ -86,15 +92,23 @@ def get_chance_info() -> Dict[int, str]:
 
 
 def get_coeff_info() -> Dict[float, str]:
-    custom = _load_raw().get("COEFF_INFO", {})
+    custom = _load_file(DESCRIPTIONS_FILE).get("COEFF_INFO", {})
     result = dict(DEFAULT_COEFF_INFO)
     for key, value in custom.items():
         result[float(key)] = value
     return result
 
 
+def get_control_info() -> Dict[str, str]:
+    custom = _load_file(DESCRIPTIONS_FILE).get("CONTROL_INFO", {})
+    result = dict(DEFAULT_CONTROL_INFO)
+    for key, value in custom.items():
+        result[key] = value
+    return result
+
+
 def get_summary_info_dict() -> Dict[float, str]:
-    custom = _load_raw().get("SUMMARY_INFO", {})
+    custom = _load_file(RANGES_FILE).get("SUMMARY_INFO", {})
     if custom:
         result = {}
         for key, value in custom.items():
@@ -104,7 +118,7 @@ def get_summary_info_dict() -> Dict[float, str]:
 
 
 def get_summary_info_aplication_dict() -> Dict[float, str]:
-    custom = _load_raw().get("SUMMARY_INFO_APLICATION", {})
+    custom = _load_file(RANGES_FILE).get("SUMMARY_INFO_APLICATION", {})
     if custom:
         result = {}
         for key, value in custom.items():
@@ -113,12 +127,15 @@ def get_summary_info_aplication_dict() -> Dict[float, str]:
     return dict(sorted(DEFAULT_SUMMARY_INFO_APLICATION.items()))
 
 
-def get_control_info() -> Dict[str, str]:
-    custom = _load_raw().get("CONTROL_INFO", {})
-    result = dict(DEFAULT_CONTROL_INFO)
-    for key, value in custom.items():
-        result[key] = value
-    return result
+def get_custom_management_measures() -> Dict[str, list]:
+    return _load_file(RISKS_FILE).get("MANAGEMENT_MEASURES", {})
+
+
+def get_management_measures(risk_number: str, default_measures: list) -> list:
+    custom = get_custom_management_measures()
+    if risk_number in custom:
+        return custom[risk_number]
+    return default_measures
 
 
 def get_summary_info(summary: float) -> str:
@@ -139,13 +156,38 @@ def get_summary_info_aplication(summary: float) -> str:
     return info[keys[-1]]
 
 
+def save_descriptions(data: dict) -> None:
+    current = _load_file(DESCRIPTIONS_FILE)
+    current.update(data)
+    _save_file(DESCRIPTIONS_FILE, current)
 
-def save_customization_section(section: str, data: dict) -> None:
-    raw = _load_raw()
-    raw[section] = data
-    _save_raw(raw)
+
+def save_ranges(data: dict) -> None:
+    current = _load_file(RANGES_FILE)
+    current.update(data)
+    _save_file(RANGES_FILE, current)
+
+
+def save_management_measures(data: Dict[str, list]) -> None:
+    _save_file(RISKS_FILE, {"MANAGEMENT_MEASURES": data})
+
+
+def reset_descriptions() -> None:
+    if DESCRIPTIONS_FILE.exists():
+        DESCRIPTIONS_FILE.unlink()
+
+
+def reset_ranges() -> None:
+    if RANGES_FILE.exists():
+        RANGES_FILE.unlink()
+
+
+def reset_risks() -> None:
+    if RISKS_FILE.exists():
+        RISKS_FILE.unlink()
 
 
 def reset_all_customizations() -> None:
-    if CUSTOMIZATION_FILE.exists():
-        CUSTOMIZATION_FILE.unlink()
+    reset_descriptions()
+    reset_ranges()
+    reset_risks()

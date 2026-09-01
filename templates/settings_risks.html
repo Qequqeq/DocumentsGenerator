@@ -4,28 +4,138 @@
 
 {% block content %}
 
-<header class="mb-12">
-    <div class="flex items-center gap-3 mb-4">
-        <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Настройки</span>
-    </div>
-    <h1 class="text-3xl font-bold text-slate-900 mb-2">Настройка рисков</h1>
-    <p class="text-base text-slate-500 max-w-xl">
-        Управление списком опасностей и рисков, их добавление, удаление и переименование.
-    </p>
-</header>
+<div class="pb-48">
 
-<div class="bg-white border border-slate-200 p-12 text-center">
-    <div class="w-16 h-16 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
-        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
+    <header class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Настройки</span>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900 mb-2">Настройка рисков</h1>
+        <p class="text-base text-slate-500 max-w-xl">
+            Отредактируйте меры противодействия для каждого риска. Каждая мера пишется с новой строки. Изменения применятся при следующей генерации документов.
+        </p>
+    </header>
+
+    {% if saved %}
+    <div class="mb-6 bg-white border border-slate-200 border-l-4 border-l-green-500 px-5 py-4">
+        <p class="text-sm font-semibold text-slate-900 mb-1">Сохранено</p>
+        <p class="text-sm text-slate-600">Изменения применятся при следующей генерации документов.</p>
     </div>
-    <h2 class="text-xl font-semibold text-slate-900 mb-2">Упс! Данная страница пока в разработке</h2>
-    <p class="text-sm text-slate-500 mb-8">Мы работаем над этим разделом. Загляните позже.</p>
-    <a href="/"
-       class="inline-block bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
-        В главное меню
-    </a>
+    {% endif %}
+
+    <form method="post" action="/settings/risks" id="risksSettingsForm">
+
+        {% for danger in dangers %}
+        <div class="danger-section {% if not loop.first %}hidden{% endif %}" data-danger-id="{{ danger.danger_number }}">
+            <div class="mb-6">
+                <div class="flex items-baseline gap-3">
+                    <span class="text-sm font-bold text-blue-600 tabular-nums">{{ danger.danger_number }}</span>
+                    <h2 class="text-xl font-semibold text-slate-900">{{ danger.danger_name }}</h2>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                {% for risk in danger.risks %}
+                <div class="risk-card bg-white border border-slate-200 p-5">
+                    <div class="mb-4">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-sm font-medium text-slate-500 tabular-nums">{{ risk.risk_number }}</span>
+                            <h3 class="text-base font-semibold text-slate-900">{{ risk.risk_name }}</h3>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-2">Меры противодействия (каждая с новой строки)</label>
+                        <textarea name="measures_{{ risk.risk_number }}" rows="4"
+                                  class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">{{ risk.measures_text }}</textarea>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="flex flex-wrap items-center gap-3 pt-8 mt-8 border-t border-slate-200">
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+                Сохранить изменения
+            </button>
+            <a href="/"
+               class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+                В главное меню
+            </a>
+        </div>
+
+    </form>
+
+    <form method="post" action="/settings/reset-risks" class="mt-6">
+        <button type="submit"
+                class="bg-white border border-red-300 hover:border-red-500 hover:bg-red-50 text-red-600 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            Восстановить значения по умолчанию
+        </button>
+        <p class="text-xs text-slate-400 mt-3">Сбрасывает только меры противодействия рискам. Описания и диапазоны не затрагиваются.</p>
+    </form>
+
 </div>
+
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-4 pointer-events-none">
+    <div class="pointer-events-auto bg-white border border-slate-200 shadow-xl rounded-3xl px-6 py-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-900">Опасности</h2>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {% for danger in dangers %}
+            <button type="button"
+                    class="danger-pill bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-full text-xs font-medium transition-colors hover:border-blue-500"
+                    data-danger-id="{{ danger.danger_number }}"
+                    title="{{ danger.danger_name }}">
+                <span class="font-bold">{{ danger.danger_number }}</span>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var currentDanger = null;
+    var pills = document.querySelectorAll('.danger-pill');
+    var sections = document.querySelectorAll('.danger-section');
+
+    function switchToDanger(dangerId) {
+        sections.forEach(function(section) {
+            if (section.getAttribute('data-danger-id') === dangerId) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        });
+
+        pills.forEach(function(pill) {
+            if (pill.getAttribute('data-danger-id') === dangerId) {
+                pill.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                pill.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
+                currentDanger = dangerId;
+            } else {
+                pill.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                pill.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
+            }
+        });
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    pills.forEach(function(pill) {
+        pill.addEventListener('click', function() {
+            var dangerId = this.getAttribute('data-danger-id');
+            switchToDanger(dangerId);
+        });
+    });
+
+    if (pills.length > 0) {
+        switchToDanger(pills[0].getAttribute('data-danger-id'));
+    }
+})();
+</script>
 
 {% endblock %}

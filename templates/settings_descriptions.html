@@ -101,13 +101,12 @@
 
 </form>
 
-<form method="post" action="/settings/reset" class="mt-6">
-    <input type="hidden" name="return_url" value="/settings/descriptions">
+<form method="post" action="/settings/reset-descriptions" class="mt-6">
     <button type="submit"
             class="bg-white border border-red-300 hover:border-red-500 hover:bg-red-50 text-red-600 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
         Восстановить значения по умолчанию
     </button>
-    <p class="text-xs text-slate-400 mt-3">Полностью очищает все настройки описаний и диапазонов</p>
+    <p class="text-xs text-slate-400 mt-3">Сбрасывает только настройки описаний.</p>
 </form>
 
 {% endblock %}
