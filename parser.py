@@ -144,7 +144,7 @@ def parce_org_data(org_path='', workers_list=None, data_frame=pd.DataFrame()):
     )
 
     chairmen = []
-    start_idx = 14
+    start_idx = 16
     col_position = 1
     col_name = 2
 
