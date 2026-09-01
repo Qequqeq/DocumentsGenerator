@@ -51,7 +51,9 @@
                     <p class="text-sm text-slate-600">{{ level }}</p>
                 </div>
                 <div class="w-40">
-                    <label class="block text-xs font-medium text-slate-500 mb-2">Максимальное значение</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-2">
+                        {% if loop.last %}Минимальное значение{% else %}Максимальное значение{% endif %}
+                    </label>
                     <input type="number" step="0.1" min="0"
                            name="summary_threshold_{{ loop.index0 }}"
                            value="{{ threshold }}"
@@ -77,7 +79,9 @@
                     <p class="text-sm text-slate-600">{{ level }}</p>
                 </div>
                 <div class="w-40">
-                    <label class="block text-xs font-medium text-slate-500 mb-2">Максимальное значение</label>
+                    <label class="block text-xs font-medium text-slate-500 mb-2">
+                        {% if loop.last %}Минимальное значение{% else %}Максимальное значение{% endif %}
+                    </label>
                     <input type="number" step="0.1" min="0"
                            name="aplication_threshold_{{ loop.index0 }}"
                            value="{{ threshold }}"

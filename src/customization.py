@@ -95,18 +95,22 @@ def get_coeff_info() -> Dict[float, str]:
 
 def get_summary_info_dict() -> Dict[float, str]:
     custom = _load_raw().get("SUMMARY_INFO", {})
-    result = dict(DEFAULT_SUMMARY_INFO)
-    for key, value in custom.items():
-        result[float(key)] = value
-    return dict(sorted(result.items()))
+    if custom:
+        result = {}
+        for key, value in custom.items():
+            result[float(key)] = value
+        return dict(sorted(result.items()))
+    return dict(sorted(DEFAULT_SUMMARY_INFO.items()))
 
 
 def get_summary_info_aplication_dict() -> Dict[float, str]:
     custom = _load_raw().get("SUMMARY_INFO_APLICATION", {})
-    result = dict(DEFAULT_SUMMARY_INFO_APLICATION)
-    for key, value in custom.items():
-        result[float(key)] = value
-    return dict(sorted(result.items()))
+    if custom:
+        result = {}
+        for key, value in custom.items():
+            result[float(key)] = value
+        return dict(sorted(result.items()))
+    return dict(sorted(DEFAULT_SUMMARY_INFO_APLICATION.items()))
 
 
 def get_control_info() -> Dict[str, str]:
