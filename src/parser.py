@@ -41,24 +41,14 @@ def parce_people_data(person_path='', data_frame=pd.DataFrame()):
             worker_id = None
             if pd.notna(val):
                 if val == 0:
-                    worker_id = worker_number
+                    worker_id = str(worker_number)
                     worker_number += 1
                 else:
-                    try:
-                        if isinstance(val, str):
-                            clean_val = val.strip()
-                            if clean_val != '':
-                                worker_id = float(clean_val)
-                        else:
-                            worker_id = float(val)
-                    except (ValueError, TypeError):
-                        pass
-                    if worker_id == int(worker_id):
-                        worker_id = int(worker_id)
+                    worker_id = str(val)
 
             workers.append(
                 WorkName(
-                    ID = worker_id,
+                    ID = str(worker_id),
                     position= str(row.iloc[1].strip()),
                     division=div[:],
                     number_at_workplace=int(row.iloc[2]),
@@ -67,29 +57,13 @@ def parce_people_data(person_path='', data_frame=pd.DataFrame()):
                     disabled=int(row.iloc[5]),
                     equipment=str(row.iloc[6]).strip(),
                     materials=str(row.iloc[7]).strip(),
-                    workerDangers=[],
                     workerTotal=0.0,
-                    summary_info=''
+                    summary_info='',
+                    workerDangers=[]
                 )
             )
             positions.append(str(row.iloc[1].strip()))
     return workers
-
-
-def find_worker_in_text(text: str, workers: List[WorkName]) -> Optional[WorkName]:
-    if pd.isna(text) or text == "":
-        return None
-
-    text_lower = str(text).lower()
-    for worker in workers:
-        if not worker.full_names:
-            continue
-
-        name = worker.full_names[0]
-        if name.lower() in text_lower:
-            return worker
-
-    return None
 
 
 def parce_org_data(org_path='', workers_list=None, data_frame=pd.DataFrame()):

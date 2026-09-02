@@ -1118,11 +1118,49 @@ def org_templates_view(file_key: str):
     )
 
 
+RISK_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "risk_templates"
+
+RISK_TEMPLATE_FILES = {
+    "slesar_json": "Slesar_template.json",
+    "slesar_pdf": "Карта1Слесарь.pdf",
+    "ofisniy_json": "Ofisniy_rabotnik_template.json",
+    "ofisniy_pdf": "Карта2Офисный_работник.pdf",
+    "elektromonter_json": "Elektromonter_template.json",
+    "elektromonter_pdf": "Карта3Электромонтер.pdf",
+    "gendir_json": "Generalniy_direktor_template.json",
+    "gendir_pdf": "Карта4Генеральный директор.pdf",
+}
+
+
 @router.get("/risk_templates")
-def risk_templates(request: Request):
+def risk_templates_page(request: Request):
     return templates.TemplateResponse(
         "risk_templates.html",
         {"request": request}
+    )
+
+
+@router.get("/risk_templates/download/{file_key}")
+def risk_templates_download(file_key: str):
+    if file_key not in RISK_TEMPLATE_FILES:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    file_path = RISK_TEMPLATES_DIR / RISK_TEMPLATE_FILES[file_key]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(file_path, filename=RISK_TEMPLATE_FILES[file_key])
+
+
+@router.get("/risk_templates/view/{file_key}")
+def risk_templates_view(file_key: str):
+    if file_key not in RISK_TEMPLATE_FILES:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    file_path = RISK_TEMPLATES_DIR / RISK_TEMPLATE_FILES[file_key]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "inline"}
     )
 
 

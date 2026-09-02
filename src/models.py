@@ -2,7 +2,7 @@
 from .RisksAndDangers import *
 @dataclass
 class WorkName:
-    ID: float  # номер в документе
+    ID: str  # номер в документе
     position: str # <<Генеральный директор>> и т.п.
     division: list[str] # название подразделения
     number_at_workplace: int # кол-во работников на месте
