@@ -29,73 +29,82 @@
 
             <div class="space-y-4">
                 {% for risk in danger.risks %}
-                <div class="risk-card bg-white border border-slate-200 p-5">
-                    <div class="mb-4 flex items-start justify-between gap-2">
-                        <div class="flex items-baseline gap-2">
-                            <span class="text-sm font-medium text-slate-500 tabular-nums">{{ risk.risk_number }}</span>
-                            <h3 class="text-base font-semibold text-slate-900">{{ risk.risk_name }}</h3>
+                    <div class="risk-card bg-white border border-slate-200 p-5">
+                        <div class="mb-4">
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-sm font-medium text-slate-500 tabular-nums">{{ risk.risk_number }}</span>
+                                <h3 class="text-base font-semibold text-slate-900">{{ risk.risk_name }}</h3>
+                            </div>
                         </div>
-                        <span class="risk-total font-bold text-slate-900 tabular-nums shrink-0 text-sm">0.0</span>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-2">Степень травм.</label>
+                                <select name="deg__{{ danger.danger_number }}__{{ risk.risk_number }}"
+                                        class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                        data-danger="{{ danger.danger_number }}"
+                                        data-risk="{{ risk.risk_number }}"
+                                        data-type="deg">
+                                    {% set current = existing[danger.danger_number][risk.risk_number] %}
+                                    {% for i in range(1, 6) %}
+                                    <option value="{{ i }}" {% if current.deg == i %}selected{% endif %}>{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-2">Вероятность</label>
+                                <select name="ch__{{ danger.danger_number }}__{{ risk.risk_number }}"
+                                        class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                        data-danger="{{ danger.danger_number }}"
+                                        data-risk="{{ risk.risk_number }}"
+                                        data-type="ch">
+                                    {% set current = existing[danger.danger_number][risk.risk_number] %}
+                                    {% for i in range(1, 6) %}
+                                    <option value="{{ i }}" {% if current.ch == i %}selected{% endif %}>{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-2">Коэффициент</label>
+                                <select name="kef__{{ danger.danger_number }}__{{ risk.risk_number }}"
+                                        class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                        data-danger="{{ danger.danger_number }}"
+                                        data-risk="{{ risk.risk_number }}"
+                                        data-type="kef">
+                                    {% set current = existing[danger.danger_number][risk.risk_number] %}
+                                    {% set opts = [0, 0.1, 0.3, 0.5, 0.7, 0.9] %}
+                                    {% for k in opts %}
+                                    <option value="{{ k }}" {% if current.kef == k %}selected{% endif %}>{{ k }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="flex items-end">
+                                <span class="risk-total text-lg font-bold text-slate-900 tabular-nums">0.0</span>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-2">Степень травм.</label>
-                            <select name="deg__{{ danger.danger_number }}__{{ risk.risk_number }}"
-                                    class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    data-danger="{{ danger.danger_number }}"
-                                    data-risk="{{ risk.risk_number }}"
-                                    data-type="deg">
-                                {% for i in range(1, 6) %}
-                                <option value="{{ i }}" {% if existing[danger.danger_number][risk.risk_number]['deg'] == i %}selected{% endif %}>{{ i }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-2">Вероятность</label>
-                            <select name="ch__{{ danger.danger_number }}__{{ risk.risk_number }}"
-                                    class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    data-danger="{{ danger.danger_number }}"
-                                    data-risk="{{ risk.risk_number }}"
-                                    data-type="ch">
-                                {% for i in range(1, 6) %}
-                                <option value="{{ i }}" {% if existing[danger.danger_number][risk.risk_number]['ch'] == i %}selected{% endif %}>{{ i }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-2">Коэффициент</label>
-                            <select name="kef__{{ danger.danger_number }}__{{ risk.risk_number }}"
-                                    class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    data-danger="{{ danger.danger_number }}"
-                                    data-risk="{{ risk.risk_number }}"
-                                    data-type="kef">
-                                {% set opts = [0, 0.1, 0.3, 0.5, 0.7, 0.9] %}
-                                {% for k in opts %}
-                                <option value="{{ k }}" {% if existing[danger.danger_number][risk.risk_number]['kef'] == k %}selected{% endif %}>{{ k }}</option>
-                                {% endfor %}
-                        </select>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+                    {% endfor %}
             </div>
         </div>
         {% endfor %}
 
-        <div class="flex flex-wrap items-center gap-3 pt-8 mt-8 border-t border-slate-200">
+        <div class="flex flex-wrap items-center gap-3 pt-8 border-t border-slate-200">
             <button type="submit"
                     class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
                 Сохранить и перейти далее
             </button>
-            <a href="/save-as-template/{{ job_id }}/{{ worker_idx }}"
-               class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+            <button type="submit"
+                    formaction="/save-as-template/{{ job_id }}/{{ worker_idx }}"
+                    formmethod="post"
+                    download="{{ template_filename }}"
+                    class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
                 Сохранить как шаблон
-            </a>
+            </button>
             <a href="/select-dangers?job_id={{ job_id }}"
-               class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+               class="inline-block bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
                 К списку работников
             </a>
         </div>

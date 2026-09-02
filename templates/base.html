@@ -28,4 +28,174 @@
         {% block content %}{% endblock %}
     </div>
 </body>
+<script>
+(function() {
+    function waitForApi(callback, attempts) {
+        attempts = attempts || 0;
+        if (window.pywebview && window.pywebview.api) {
+            callback();
+        } else if (attempts < 50) {
+            setTimeout(function() { waitForApi(callback, attempts + 1); }, 100);
+        } else {
+            console.warn('pywebview API не доступен, работаем в режиме браузера');
+        }
+    }
+
+    function setupInterceptors() {
+        document.addEventListener('click', function(e) {
+            var link = e.target.closest('a');
+            var button = e.target.closest('button, input[type="submit"]');
+
+            if (link) {
+                var href = link.getAttribute('href');
+                if (!href) return;
+
+                if (link.hasAttribute('target') && link.getAttribute('target') === '_blank') {
+                    e.preventDefault();
+                    if (window.pywebview && window.pywebview.api && window.pywebview.api.open_external) {
+                        window.pywebview.api.open_external(href);
+                    } else {
+                        window.open(href, '_blank');
+                    }
+                    return;
+                }
+
+                var hasDownloadAttr = link.hasAttribute('download');
+                var isDownloadUrl = href.indexOf('/download/') !== -1 ||
+                                    href.indexOf('/org_templates/download/') !== -1 ||
+                                    href.indexOf('/doc_templates/download/') !== -1 ||
+                                    href.indexOf('/save-project/') !== -1;
+
+                if (hasDownloadAttr || isDownloadUrl) {
+                    e.preventDefault();
+                    var filename = link.getAttribute('download');
+                    if (!filename || filename === '' || filename === 'true') {
+                        var parts = href.split('/');
+                        filename = parts[parts.length - 1] || 'file';
+                        if (filename.indexOf('?') !== -1) filename = filename.split('?')[0];
+                    }
+
+                    if (window.pywebview && window.pywebview.api && window.pywebview.api.download_file) {
+                        window.pywebview.api.download_file(href, filename).then(function(result) {
+                            if (result.success) {
+                                showNotification('Файл сохранён: ' + result.filename);
+                            } else {
+                                showNotification('Ошибка скачивания: ' + result.error, true);
+                            }
+                        });
+                    } else {
+                        var a = document.createElement('a');
+                        a.href = href;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                    return;
+                }
+            }
+
+            if (button) {
+                var downloadName = button.getAttribute('download') || button.getAttribute('data-download');
+                if (!downloadName) return;
+
+                var form = button.closest('form');
+                if (!form) return;
+
+                e.preventDefault();
+
+                var formData = new FormData(form);
+                var action = button.getAttribute('formaction') || form.getAttribute('action');
+                var method = (button.getAttribute('formmethod') || form.getAttribute('method') || 'POST').toUpperCase();
+
+                var url = new URL(action, window.location.origin);
+                var fetchUrl = '';
+                var fetchBody = null;
+
+                if (method === 'GET') {
+                    formData.forEach(function(value, key) {
+                        url.searchParams.append(key, value);
+                    });
+                    fetchUrl = url.toString();
+                    fetchBody = null;
+                } else {
+                    fetchUrl = url.toString();
+                    fetchBody = formData;
+                }
+
+                fetch(fetchUrl, {
+                    method: method,
+                    body: fetchBody
+                })
+                .then(function(response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.blob();
+                })
+                .then(function(blob) {
+                    var reader = new FileReader();
+                    reader.onloadend = function() {
+                        var base64 = reader.result.split(',')[1];
+                        if (window.pywebview && window.pywebview.api && window.pywebview.api.save_blob) {
+                            window.pywebview.api.save_blob(base64, downloadName).then(function(result) {
+                                if (result.success) {
+                                    showNotification('Файл сохранён: ' + result.filename);
+                                } else {
+                                    showNotification('Ошибка скачивания: ' + result.error, true);
+                                }
+                            });
+                        } else {
+                            var blobUrl = URL.createObjectURL(blob);
+                            var a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = downloadName;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 1000);
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                })
+                .catch(function(err) {
+                    console.error('Form submit error:', err);
+                    showNotification('Ошибка: ' + err.message, true);
+                });
+            }
+        });
+    }
+
+    function showNotification(text, isError) {
+        var existing = document.getElementById('pywebview-notification');
+        if (existing) existing.remove();
+
+        var n = document.createElement('div');
+        n.id = 'pywebview-notification';
+        n.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;' +
+                          'background:' + (isError ? '#ef4444' : '#10b981') + ';' +
+                          'color:white;padding:12px 20px;border-radius:8px;' +
+                          'font-family:system-ui;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.15);' +
+                          'animation:slideIn 0.3s ease-out;max-width:400px;';
+        n.textContent = text;
+
+        var style = document.createElement('style');
+        style.textContent = '@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}';
+        document.head.appendChild(style);
+        document.body.appendChild(n);
+
+        setTimeout(function() {
+            n.style.transition = 'opacity 0.3s';
+            n.style.opacity = '0';
+            setTimeout(function() { n.remove(); }, 300);
+        }, 3000);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            waitForApi(setupInterceptors);
+        });
+    } else {
+        waitForApi(setupInterceptors);
+    }
+})();
+</script>
 </html>

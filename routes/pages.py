@@ -88,6 +88,19 @@ def upload_form(request: Request):
 @router.get("/create-template")
 def create_template_form(request: Request):
     all_dangers = list(DANGER_DATABASE.values())
+
+    existing = {}
+    for danger in all_dangers:
+        danger_num = danger.danger_number
+        existing[danger_num] = {}
+        for risk in danger.risks:
+            risk_num = risk.risk_number
+            existing[danger_num][risk_num] = {
+                "deg": risk.degree,
+                "ch": risk.chance,
+                "kef": risk.coefficient
+            }
+
     return templates.TemplateResponse(
         "create_template.html",
         {
@@ -96,7 +109,7 @@ def create_template_form(request: Request):
             "degree_info": get_degree_info(),
             "chance_info": get_chance_info(),
             "coeff_info": get_coeff_info(),
-            "existing": {}
+            "existing": existing
         }
     )
 
@@ -397,6 +410,7 @@ async def upload_project(
 
 @router.get("/load-project/{job_id}")
 def load_existing_project(request: Request, job_id: str):
+    from src.logger import log_info, log_error
     try:
         job = load_job(job_id)
         workers = job["people_data"]
@@ -405,6 +419,9 @@ def load_existing_project(request: Request, job_id: str):
             inputs = job["risk_inputs"].get(worker.ID, {})
             if inputs:
                 get_worker_risks(worker, job["org_dangers"], inputs)
+
+        org_name = job["org_data"].full_name if hasattr(job["org_data"], 'full_name') else "Проект"
+        project_filename = f"project_{safe_filename(translit(org_name))}.zip"
 
         log_info("STORAGE", f"Проект {job_id} загружен для продолжения работы")
 
@@ -415,7 +432,9 @@ def load_existing_project(request: Request, job_id: str):
                 "workers": workers,
                 "job_id": job_id,
                 "risk_inputs": job.get("risk_inputs", {}),
-                "generated_cards": job.get("generated_cards", set())
+                "generated_cards": job.get("generated_cards", set()),
+                "org_name": org_name,
+                "project_filename": project_filename,
             }
         )
     except KeyError:
@@ -436,6 +455,9 @@ def show_select_dangers(request: Request, job_id: str):
         if inputs:
             get_worker_risks(worker, job["org_dangers"], inputs)
 
+    org_name = job["org_data"].full_name if hasattr(job["org_data"], 'full_name') else "Проект"
+    project_filename = f"project_{safe_filename(translit(org_name))}.zip"
+
     return templates.TemplateResponse(
         "select_worker_risks.html",
         {
@@ -443,7 +465,9 @@ def show_select_dangers(request: Request, job_id: str):
             "workers": workers,
             "job_id": job_id,
             "risk_inputs": job.get("risk_inputs", {}),
-            "generated_cards": job.get("generated_cards", set())
+            "generated_cards": job.get("generated_cards", set()),
+            "org_name": org_name,
+            "project_filename": project_filename,
         }
     )
 
@@ -565,6 +589,7 @@ async def select_dangers(
 
 @router.get("/worker_risks/{job_id}/{worker_idx}")
 def worker_risks_form(request: Request, job_id: str, worker_idx: int):
+    from src.logger import log_info, log_error
     job = load_job(job_id)
     workers = job["people_data"]
     if worker_idx < 0 or worker_idx >= len(workers):
@@ -598,6 +623,8 @@ def worker_risks_form(request: Request, job_id: str, worker_idx: int):
                 "kef": saved.get("kef", default_kef)
             }
 
+    template_filename = f"{safe_filename(translit(worker.position))}_template.json"
+
     return templates.TemplateResponse(
         "worker_risks.html",
         {
@@ -609,7 +636,8 @@ def worker_risks_form(request: Request, job_id: str, worker_idx: int):
             "existing": existing,
             "degree_info": get_degree_info(),
             "chance_info": get_chance_info(),
-            "coeff_info": get_coeff_info()
+            "coeff_info": get_coeff_info(),
+            "template_filename": template_filename,
         }
     )
 
@@ -973,6 +1001,9 @@ def generate(request: Request, job_id: str):
     except Exception as e:
         log_error("GENERATION", e, {"job_id": job_id})
         raise
+    org_name = job["org_data"].full_name if hasattr(job["org_data"], 'full_name') else "Проект"
+    project_filename = f"project_{safe_filename(translit(org_name))}.zip"
+    archive_filename = f"{safe_filename(translit(org_name))}.zip"
 
     return templates.TemplateResponse(
         "result.html",
@@ -982,7 +1013,10 @@ def generate(request: Request, job_id: str):
             "job_id": job_id,
             "generated_count": len(job.get("generated_cards", set())),
             "total_workers": len(job["people_data"]),
-            "zip_ready": True
+            "zip_ready": True,
+            "org_name": org_name,
+            "project_filename": project_filename,
+            "archive_filename": archive_filename,
         }
     )
 
@@ -1063,7 +1097,11 @@ def org_templates_download(file_key: str):
     file_path = ORG_TEMPLATES_DIR / ORG_TEMPLATE_FILES[file_key]
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Файл не найден")
-    return FileResponse(file_path, filename=ORG_TEMPLATE_FILES[file_key])
+    return FileResponse(
+        file_path,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=ORG_TEMPLATE_FILES[file_key]
+    )
 
 
 @router.get("/org_templates/view/{file_key}")
@@ -1117,7 +1155,20 @@ def doc_templates_download(file_key: str):
     file_path = DOC_TEMPLATES_DIR / DOC_TEMPLATE_FILES[file_key]
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Файл не найден")
-    return FileResponse(file_path, filename=DOC_TEMPLATE_FILES[file_key])
+
+    filename = DOC_TEMPLATE_FILES[file_key]
+    if filename.endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif filename.endswith(".xlsx"):
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    else:
+        media_type = "application/octet-stream"
+
+    return FileResponse(
+        file_path,
+        media_type=media_type,
+        filename=filename
+    )
 
 
 @router.get("/doc_templates/view/{file_key}")

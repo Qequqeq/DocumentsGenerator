@@ -3,123 +3,133 @@
 {% block title %}Создание шаблона должности{% endblock %}
 
 {% block content %}
-
 <div class="pb-48">
 
-    <header class="mb-8">
-        <div class="flex items-center gap-3 mb-4">
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Создание шаблона</span>
-        </div>
-        <h1 class="text-3xl font-bold text-slate-900 mb-2">Создание шаблона должности</h1>
-        <p class="text-sm text-slate-400">Заполните оценки для каждого риска. После сохранения будет скачан JSON-файл.</p>
-    </header>
-
-    <div class="mb-8">
-        <label class="block text-sm font-medium text-slate-900 mb-2">Название должности</label>
-        <input type="text"
-               id="templateName"
-               name="template_name"
-               placeholder="Например: Генеральный директор"
-               required
-               class="w-full max-w-md bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+<header class="mb-8">
+    <div class="flex items-center gap-3 mb-4">
+        <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Работа с проектом</span>
     </div>
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Создание шаблона должности</h1>
+    <p class="text-base text-slate-500 max-w-xl">
+        Заполните оценки для каждого риска. Если какой-то из множителей равен нулю, то риск будет пропущен. После сохранения будет скачан JSON-файл шаблона.
+    </p>
+</header>
 
-    <div id="risksContainer">
-        {% for danger in dangers %}
-        <div class="danger-section hidden" data-danger-id="{{ danger.danger_number }}">
-            <div class="mb-6">
-                <div class="flex items-baseline gap-3">
-                    <span class="text-sm font-bold text-blue-600 tabular-nums">{{ danger.danger_number }}</span>
-                    <h2 class="text-xl font-semibold text-slate-900">{{ danger.danger_name }}</h2>
-                </div>
-            </div>
+<form method="post" action="/create-template" id="templateForm">
 
-            <div class="space-y-4">
-                {% for risk in danger.risks %}
-                <div class="risk-card bg-white border border-slate-200 p-5">
-                    <div class="mb-4 flex items-start justify-between gap-2">
-                        <div class="flex items-baseline gap-2">
-                            <span class="text-sm font-medium text-slate-500 tabular-nums">{{ risk.risk_number }}</span>
-                            <h3 class="text-base font-semibold text-slate-900">{{ risk.risk_name }}</h3>
-                        </div>
-                        <span class="risk-total font-bold text-slate-900 tabular-nums shrink-0 text-sm">0.0</span>
-                    </div>
+    <section class="mb-8">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">1.</span>
+            <h2 class="text-base font-semibold text-slate-900">Название должности</h2>
+        </div>
+        <div class="max-w-md">
+            <input type="text"
+                   id="template_name"
+                   name="template_name"
+                   placeholder="Например: Генеральный директор"
+                   required
+                   class="w-full bg-white border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+            <p class="text-xs text-slate-400 mt-2">Это название будет сохранено внутри шаблона и использоваться при его применении.</p>
+        </div>
+    </section>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-2">Степень травм.</label>
-                            <select class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    data-danger="{{ danger.danger_number }}"
-                                    data-risk="{{ risk.risk_number }}"
-                                    data-type="deg">
-                                {% for i in range(1, 6) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+    {% for danger in dangers %}
+    <div class="danger-section {% if not loop.first %}hidden{% endif %}" data-danger="{{ danger.danger_number }}">
+        <div class="flex items-baseline gap-3 mb-5 pb-3 border-b border-slate-200">
+            <span class="text-sm font-bold text-blue-600 tabular-nums">{{ "%2d."|format(danger.danger_number) }}</span>
+            <h2 class="text-base font-semibold text-slate-900">{{ danger.danger_name }}</h2>
+        </div>
 
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-2">Вероятность</label>
-                            <select class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    data-danger="{{ danger.danger_number }}"
-                                    data-risk="{{ risk.risk_number }}"
-                                    data-type="ch">
-                                {% for i in range(1, 6) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-2">Коэффициент</label>
-                            <select class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    data-danger="{{ danger.danger_number }}"
-                                    data-risk="{{ risk.risk_number }}"
-                                    data-type="kef">
-                                {% set opts = [0, 0.1, 0.3, 0.5, 0.7, 0.9] %}
-                                {% for k in opts %}
-                                <option value="{{ k }}">{{ k }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+        <div class="space-y-4">
+            {% for risk in danger.risks %}
+            {% set current = existing[danger.danger_number][risk.risk_number] %}
+            <div class="risk-card bg-white border border-slate-200 p-5">
+                <div class="mb-4">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-sm font-medium text-slate-500 tabular-nums">{{ risk.risk_number }}</span>
+                        <h3 class="text-base font-semibold text-slate-900">{{ risk.risk_name }}</h3>
                     </div>
                 </div>
-                {% endfor %}
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-2">Степень травм.</label>
+                        <select name="deg__{{ danger.danger_number }}__{{ risk.risk_number }}"
+                                class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                data-danger="{{ danger.danger_number }}"
+                                data-risk="{{ risk.risk_number }}"
+                                data-type="deg">
+                            {% for i in range(1, 6) %}
+                            <option value="{{ i }}" {% if current.deg == i %}selected{% endif %}>{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-2">Вероятность</label>
+                        <select name="ch__{{ danger.danger_number }}__{{ risk.risk_number }}"
+                                class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                data-danger="{{ danger.danger_number }}"
+                                data-risk="{{ risk.risk_number }}"
+                                data-type="ch">
+                            {% for i in range(1, 6) %}
+                            <option value="{{ i }}" {% if current.ch == i %}selected{% endif %}>{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-2">Коэффициент</label>
+                        <select name="kef__{{ danger.danger_number }}__{{ risk.risk_number }}"
+                                class="risk-input w-full bg-white border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                data-danger="{{ danger.danger_number }}"
+                                data-risk="{{ risk.risk_number }}"
+                                data-type="kef">
+                            {% set opts = [0, 0.1, 0.3, 0.5, 0.7, 0.9] %}
+                            {% for k in opts %}
+                            <option value="{{ k }}" {% if current.kef == k %}selected{% endif %}>{{ k }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <span class="risk-total text-lg font-bold text-slate-900 tabular-nums">0.0</span>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
+    {% endfor %}
 
     <div class="flex flex-wrap items-center gap-3 pt-8 mt-8 border-t border-slate-200">
-        <button type="button" id="downloadBtn"
+        <button type="submit" id="downloadTemplateBtn"
+                data-download="{position}_template.json"
                 class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
             Скачать шаблон
         </button>
         <a href="/"
-           class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
+           class="inline-block bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
             В главное меню
         </a>
     </div>
 
-</div>
+</form>
 
 <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-4 pointer-events-none">
     <div class="pointer-events-auto bg-white border border-slate-200 shadow-xl rounded-3xl px-6 py-4">
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-semibold text-slate-900">Опасности</h2>
-            <div class="text-sm text-slate-600">
-                Суммарный риск: <span id="totalRisk" class="font-bold text-slate-900 tabular-nums">0.0</span>
-            </div>
+            <span class="text-xs text-slate-500">Суммарный риск: <span id="grand-total" class="font-bold tabular-nums">0.0</span></span>
         </div>
         <div class="flex flex-wrap gap-2">
             {% for danger in dangers %}
             <button type="button"
-                    class="danger-pill bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-full text-xs font-medium transition-colors hover:border-blue-500"
-                    data-danger-id="{{ danger.danger_number }}"
-                    data-danger-name="{{ danger.danger_name }}"
+                    class="danger-pill bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-full text-xs font-medium transition-colors hover:border-blue-500 flex items-center gap-2"
+                    data-danger="{{ danger.danger_number }}"
                     title="{{ danger.danger_name }}">
                 <span class="font-bold">{{ danger.danger_number }}</span>
-                <span class="danger-total ml-1.5 tabular-nums">0.0</span>
+                <span class="danger-total text-slate-400 tabular-nums">0.0</span>
             </button>
             {% endfor %}
         </div>
@@ -128,13 +138,61 @@
 
 <script>
 (function() {
-    var currentDanger = null;
+    function transliterate(text) {
+        var map = {
+            'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
+            'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+            'с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'sch',
+            'ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'
+        };
+        var result = '';
+        for (var i = 0; i < text.length; i++) {
+            var ch = text[i].toLowerCase();
+            result += map[ch] !== undefined ? map[ch] : ch;
+        }
+        return result.replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    }
+
+    function calculateTotals() {
+        var dangerTotals = {};
+        var grandTotal = 0;
+
+        document.querySelectorAll('.risk-card').forEach(function(card) {
+            var selects = card.querySelectorAll('select');
+            var deg = parseFloat(selects[0].value);
+            var ch = parseFloat(selects[1].value);
+            var kef = parseFloat(selects[2].value);
+            var result = deg * ch * kef;
+
+            card.querySelector('.risk-total').textContent = result.toFixed(1);
+
+            var dangerId = selects[0].getAttribute('data-danger');
+            if (!dangerTotals[dangerId]) dangerTotals[dangerId] = 0;
+            dangerTotals[dangerId] += result;
+            grandTotal += result;
+        });
+
+        document.querySelectorAll('.danger-pill').forEach(function(pill) {
+            var dangerId = pill.getAttribute('data-danger');
+            var total = dangerTotals[dangerId] || 0;
+            pill.querySelector('.danger-total').textContent = total.toFixed(1);
+        });
+
+        document.getElementById('grand-total').textContent = grandTotal.toFixed(1);
+    }
+
+    document.querySelectorAll('.risk-input').forEach(function(select) {
+        select.addEventListener('change', calculateTotals);
+    });
+
+    calculateTotals();
+
     var pills = document.querySelectorAll('.danger-pill');
     var sections = document.querySelectorAll('.danger-section');
 
     function switchToDanger(dangerId) {
         sections.forEach(function(section) {
-            if (section.getAttribute('data-danger-id') === dangerId) {
+            if (section.getAttribute('data-danger') === dangerId) {
                 section.classList.remove('hidden');
             } else {
                 section.classList.add('hidden');
@@ -142,10 +200,9 @@
         });
 
         pills.forEach(function(pill) {
-            if (pill.getAttribute('data-danger-id') === dangerId) {
+            if (pill.getAttribute('data-danger') === dangerId) {
                 pill.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
                 pill.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
-                currentDanger = dangerId;
             } else {
                 pill.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
                 pill.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
@@ -157,114 +214,28 @@
 
     pills.forEach(function(pill) {
         pill.addEventListener('click', function() {
-            var dangerId = this.getAttribute('data-danger-id');
+            var dangerId = this.getAttribute('data-danger');
             switchToDanger(dangerId);
         });
     });
 
-    function calculateRisk(dangerId, riskId) {
-        var degSelect = document.querySelector('[data-danger="' + dangerId + '"][data-risk="' + riskId + '"][data-type="deg"]');
-        var chSelect = document.querySelector('[data-danger="' + dangerId + '"][data-risk="' + riskId + '"][data-type="ch"]');
-        var kefSelect = document.querySelector('[data-danger="' + dangerId + '"][data-risk="' + riskId + '"][data-type="kef"]');
-
-        var deg = degSelect ? parseFloat(degSelect.value) || 0 : 0;
-        var ch = chSelect ? parseFloat(chSelect.value) || 0 : 0;
-        var kef = kefSelect ? parseFloat(kefSelect.value) || 0 : 0;
-
-        return deg * ch * kef;
-    }
-
-    function updateTotals() {
-        var grandTotal = 0;
-
-        sections.forEach(function(section) {
-            var dangerId = section.getAttribute('data-danger-id');
-            var dangerTotal = 0;
-
-            var degInputs = section.querySelectorAll('.risk-input[data-type="deg"]');
-            degInputs.forEach(function(input) {
-                var riskId = input.getAttribute('data-risk');
-                var risk = calculateRisk(dangerId, riskId);
-                dangerTotal += risk;
-
-                var riskCard = input.closest('.risk-card');
-                if (riskCard) {
-                    var riskTotalEl = riskCard.querySelector('.risk-total');
-                    if (riskTotalEl) {
-                        riskTotalEl.textContent = risk.toFixed(1);
-                    }
-                }
-            });
-
-            grandTotal += dangerTotal;
-
-            var pill = document.querySelector('.danger-pill[data-danger-id="' + dangerId + '"]');
-            if (pill) {
-                var pillTotalEl = pill.querySelector('.danger-total');
-                if (pillTotalEl) {
-                    pillTotalEl.textContent = dangerTotal.toFixed(1);
-                }
-            }
-        });
-
-        document.getElementById('totalRisk').textContent = grandTotal.toFixed(1);
-    }
-
-    document.querySelectorAll('.risk-input').forEach(function(input) {
-        input.addEventListener('change', updateTotals);
-    });
-
     if (pills.length > 0) {
-        switchToDanger(pills[0].getAttribute('data-danger-id'));
+        switchToDanger(pills[0].getAttribute('data-danger'));
     }
 
-    updateTotals();
+    var downloadBtn = document.getElementById('downloadTemplateBtn');
+    var nameInput = document.getElementById('template_name');
 
-    document.getElementById('downloadBtn').addEventListener('click', function() {
-        var templateName = document.getElementById('templateName').value.trim();
-        if (!templateName) {
-            alert('Пожалуйста, введите название должности');
-            document.getElementById('templateName').focus();
-            return;
-        }
+    function updateDownloadFilename() {
+        var name = nameInput.value.trim() || 'Шаблон';
+        var transliterated = transliterate(name) || 'Shablon';
+        downloadBtn.setAttribute('data-download', transliterated + '_template.json');
+    }
 
-        var templateData = {
-            template_name: templateName,
-            risks: {}
-        };
-
-        document.querySelectorAll('.danger-section').forEach(function(section) {
-            var dangerId = section.getAttribute('data-danger-id');
-            templateData.risks[dangerId] = {};
-
-            section.querySelectorAll('.risk-input[data-type="deg"]').forEach(function(degInput) {
-                var riskId = degInput.getAttribute('data-risk');
-                var deg = parseFloat(degInput.value) || 1;
-                var chInput = section.querySelector('.risk-input[data-risk="' + riskId + '"][data-type="ch"]');
-                var kefInput = section.querySelector('.risk-input[data-risk="' + riskId + '"][data-type="kef"]');
-
-                var ch = chInput ? parseFloat(chInput.value) || 1 : 1;
-                var kef = kefInput ? parseFloat(kefInput.value) || 0 : 0;
-
-                templateData.risks[dangerId][riskId] = {
-                    deg: deg,
-                    ch: ch,
-                    kef: kef
-                };
-            });
-        });
-
-        var blob = new Blob([JSON.stringify(templateData, null, 2)], { type: 'application/json' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = templateName.replace(/\s+/g, '_') + '_template.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    });
+    nameInput.addEventListener('input', updateDownloadFilename);
+    nameInput.addEventListener('blur', updateDownloadFilename);
+    updateDownloadFilename();
 })();
 </script>
-
+</div>
 {% endblock %}

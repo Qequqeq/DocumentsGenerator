@@ -1,8 +1,17 @@
+from contextlib import asynccontextmanager
 from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from routes import pages
 from src.logger import logger, log_error
+import webview
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Сервер запущен")
+    yield
+    logger.info("Сервер остановлен")
 
 app = FastAPI()
 app.include_router(pages.router)
@@ -27,13 +36,3 @@ async def error_logging_middleware(request: Request, call_next):
                 "error_type": type(e).__name__
             }
         )
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Сервер запущен")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("Сервер остановлен")

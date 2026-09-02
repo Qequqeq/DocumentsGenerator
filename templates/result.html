@@ -38,7 +38,7 @@
     </div>
     <p class="text-sm text-slate-500 mb-4">Архив содержит все сформированные карты рисков и финальный сводный отчёт по организации.</p>
     <div class="flex flex-wrap items-center gap-3">
-        <a href="/download/{{ job_id }}"
+        <a href="/download/{{ job_id }}" download="Итоговый_{{ project_filename }}"
            class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
             Скачать карты и отчёт
         </a>
@@ -56,7 +56,7 @@
     </div>
     <p class="text-sm text-slate-500 mb-4">Архив проекта содержит заполненные риски всех сотрудников. Его можно будет открыть заново нажав «Открыть проект» в главном меню.</p>
     <div class="flex flex-wrap items-center gap-3">
-        <a href="/save-project/{{ job_id }}" id="saveProjectBtn"
+        <a href="/save-project/{{ job_id }}" id="saveProjectBtn" download="{{ project_filename }}"
            class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 font-medium px-8 py-3 text-sm uppercase tracking-wide transition-colors">
             Сохранить проект
         </a>
@@ -107,7 +107,7 @@
             <p class="text-sm text-slate-600">Скачайте архив проекта, чтобы не потерять результаты работы. После выхода восстановить данные будет невозможно.</p>
         </div>
         <div class="flex flex-col sm:flex-row gap-3">
-            <a href="/save-project/{{ job_id }}" id="modalSaveBtn"
+            <a href="/save-project/{{ job_id }}" id="modalSaveBtn" download="{{ project_filename }}"
                class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium px-6 py-3 text-sm uppercase tracking-wide text-center transition-colors">
                 Скачать проект
             </a>
@@ -145,12 +145,6 @@
         modalSaveBtn.addEventListener('click', markSaved);
     }
 
-    window.addEventListener('beforeunload', function(e) {
-        if (!projectSaved) {
-            e.preventDefault();
-            e.returnValue = '';
-        }
-    });
 
     var modal = document.getElementById('unsavedModal');
     var modalExitBtn = document.getElementById('modalExitBtn');
