@@ -1124,13 +1124,12 @@ RISK_TEMPLATE_FILES = {
     "slesar_json": "Slesar_template.json",
     "slesar_pdf": "Карта1Слесарь.pdf",
     "ofisniy_json": "Ofisniy_rabotnik_template.json",
-    "ofisniy_pdf": "Карта2Офисный_работник.pdf",
+    "ofisniy_pdf": "Карта2Офисный работник.pdf",
     "elektromonter_json": "Elektromonter_template.json",
     "elektromonter_pdf": "Карта3Электромонтер.pdf",
     "gendir_json": "Generalniy_direktor_template.json",
     "gendir_pdf": "Карта4Генеральный директор.pdf",
 }
-
 
 @router.get("/risk_templates")
 def risk_templates_page(request: Request):
@@ -1427,3 +1426,17 @@ async def settings_reset_ranges(request: Request):
 async def settings_reset_risks(request: Request):
     reset_risks()
     return RedirectResponse(url="/settings/risks", status_code=303)
+
+@router.get("/library")
+def library_menu(request: Request):
+    return templates.TemplateResponse("library.html", {"request": request})
+
+
+@router.get("/settings")
+def settings_menu_page(request: Request):
+    return templates.TemplateResponse("settings_menu.html", {"request": request})
+
+
+@router.get("/account")
+def account_page(request: Request):
+    return templates.TemplateResponse("account.html", {"request": request})

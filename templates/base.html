@@ -3,31 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
-
+    <title>{% block title %}Главное меню{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+    </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900 antialiased">
-    <div class="max-w-5xl mx-auto px-6 py-12">
-        {% block content %}{% endblock %}
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+<button id="menuToggle"
+        class="fixed top-4 right-4 z-50 bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 p-3 transition-colors"
+        aria-label="Открыть меню">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+</button>
+
+<div id="menuOverlay" class="fixed inset-0 bg-black/40 z-40 hidden"></div>
+
+
+<aside id="menuPanel"
+       class="fixed top-0 right-0 h-full w-80 max-w-full bg-white border-l border-slate-200 z-50 transform translate-x-full transition-transform duration-300">
+    <div class="p-6 h-full overflow-y-auto">
+        <div class="flex items-center justify-between mb-8">
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-600">Навигация</span>
+            <button id="menuClose" class="text-slate-400 hover:text-slate-700 transition-colors" aria-label="Закрыть меню">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <h2 class="text-xl font-bold text-slate-900 mb-6">Меню</h2>
+        <nav class="space-y-2">
+            <a href="/" class="menu-link block px-4 py-3 border border-transparent text-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors">
+                Работа с проектом
+            </a>
+            <a href="/library" class="menu-link block px-4 py-3 border border-transparent text-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors">
+                Библиотека шаблонов
+            </a>
+            <a href="/settings" class="menu-link block px-4 py-3 border border-transparent text-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors">
+                Настройки
+            </a>
+            <a href="/account" class="menu-link block px-4 py-3 border border-transparent text-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors">
+                Личный кабинет
+            </a>
+        </nav>
     </div>
-</body>
+</aside>
+
+<div class="min-h-screen max-w-6xl mx-auto px-6 py-10">
+    {% block content %}{% endblock %}
+</div>
+
+<script>
+(function() {
+    var toggle = document.getElementById('menuToggle');
+    var closeBtn = document.getElementById('menuClose');
+    var panel = document.getElementById('menuPanel');
+    var overlay = document.getElementById('menuOverlay');
+
+    function openMenu() {
+        panel.classList.remove('translate-x-full');
+        overlay.classList.remove('hidden');
+    }
+
+    function closeMenu() {
+        panel.classList.add('translate-x-full');
+        overlay.classList.add('hidden');
+    }
+
+    if (toggle) toggle.addEventListener('click', openMenu);
+    if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+    if (overlay) overlay.addEventListener('click', closeMenu);
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMenu();
+    });
+
+    var currentPath = window.location.pathname;
+    document.querySelectorAll('.menu-link').forEach(function(link) {
+        var href = link.getAttribute('href');
+        var isActive = (href === '/' && currentPath === '/') ||
+                       (href !== '/' && currentPath.indexOf(href) === 0 && href !== '/settings') ||
+                       (href === '/settings' && (currentPath === '/settings'));
+        if (isActive) {
+            link.classList.add('border-blue-500', 'text-blue-600', 'font-medium');
+        }
+    });
+})();
+</script>
 <script>
 (function() {
     function waitForApi(callback, attempts) {
