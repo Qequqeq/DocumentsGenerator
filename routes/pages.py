@@ -395,6 +395,9 @@ async def upload_project(
         zip_path.unlink()
 
     save_job_data(job_id, job)
+    org_data = job["org_data"]
+    org_name = org_data.get("full_name", "Неизвестная организация") if isinstance(org_data, dict) else "Неизвестная организация"
+    project_filename = f"project_{safe_filename(translit(org_name))}.zip"
 
     return templates.TemplateResponse(
         "select_worker_risks.html",
@@ -403,7 +406,8 @@ async def upload_project(
             "workers": workers,
             "job_id": job_id,
             "risk_inputs": job.get("risk_inputs", {}),
-            "generated_cards": job["generated_cards"]
+            "generated_cards": job["generated_cards"],
+            "project_filename": project_filename
         }
     )
 
