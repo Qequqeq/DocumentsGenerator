@@ -144,11 +144,6 @@ def validate_people_file(file_path: Path) -> Tuple[bool, List[str], Optional[pd.
                     f"Неопознанный символ \"{div_level}\" в маркере подразделения строки {i + 2}. "
                     f"Допускаются только целочисленные маркеры"
                 )
-            if abs(last_div_level - int(float(div_level))) > 1 and int(float(div_level)) != 1:
-                errors.append(
-                    f"За подразделением с маркером {last_div_level} следует подразделение {row[1]} с маркером {int(float(div_level))}."
-                    f"Маркеры должны идти с шагом в единицу, либо быть 1 для подразделений верхнего уровня."
-                )
             last_div_level = int(float(div_level))
         else:
             cur_worker_id = row[0]
