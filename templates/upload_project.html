@@ -48,7 +48,7 @@
             <h2 class="text-base font-semibold text-slate-900">Архив проекта</h2>
         </div>
 
-        <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+        <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors drop-zone">
             <div class="p-5">
                 <div class="flex items-start justify-between mb-6">
                     <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +89,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors drop-zone">
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-6">
                         <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@
                 <input type="file" name="card_template_file" accept=".docx" required class="hidden">
             </label>
 
-            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors drop-zone">
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-6">
                         <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +128,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors drop-zone">
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-6">
                         <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +142,7 @@
                 <input type="file" name="people_file" accept=".xlsx" required class="hidden">
             </label>
 
-            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors">
+            <label class="group block bg-white border border-slate-300 hover:border-blue-500 cursor-pointer transition-colors drop-zone">
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-6">
                         <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,13 +173,54 @@
 </form>
 
 <script>
+function updateFileStatus(input) {
+    var label = input.closest('label');
+    var statusEl = label.querySelector('.file-status');
+    if (input.files.length > 0) {
+        statusEl.textContent = input.files[0].name;
+        statusEl.classList.remove('text-slate-400');
+        statusEl.classList.add('text-blue-600', 'font-medium');
+    } else {
+        statusEl.textContent = 'Файл не выбран';
+        statusEl.classList.add('text-slate-400');
+        statusEl.classList.remove('text-blue-600', 'font-medium');
+    }
+}
+
 document.querySelectorAll('input[type="file"]').forEach(function(input) {
     input.addEventListener('change', function() {
-        var statusEl = this.closest('label').querySelector('.file-status');
-        if (this.files.length > 0) {
-            statusEl.textContent = this.files[0].name;
-            statusEl.classList.remove('text-slate-400');
-            statusEl.classList.add('text-blue-600', 'font-medium');
+        updateFileStatus(this);
+    });
+});
+
+document.querySelectorAll('.drop-zone').forEach(function(zone) {
+    ['dragenter', 'dragover'].forEach(function(eventName) {
+        zone.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+            zone.classList.add('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-500');
+        });
+    });
+    ['dragleave', 'drop'].forEach(function(eventName) {
+        zone.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            zone.classList.remove('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-500');
+        });
+    });
+
+    zone.addEventListener('drop', function(e) {
+        var input = zone.querySelector('input[type="file"]');
+        if (!input) return;
+
+        var files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            updateFileStatus(input);
         }
     });
 });

@@ -80,8 +80,11 @@
 
 </div>
 
-<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-3xl px-4 pointer-events-none">
-    <div class="pointer-events-auto bg-white border border-slate-200 shadow-xl rounded-full px-6 py-3 flex items-center gap-4">
+<!-- Нижняя плавающая панель с drag&drop поддержкой -->
+<div id="bulkDropZone"
+     class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-3xl px-4 pointer-events-none drop-zone">
+    <div class="pointer-events-auto bg-white border border-slate-200 shadow-xl rounded-full px-6 py-3 flex items-center gap-4 transition-all duration-200"
+         id="bulkDropInner">
         <div class="text-sm text-slate-600 whitespace-nowrap">
             Выбрано: <span id="selectedCount" class="font-bold text-slate-900 tabular-nums">0</span>
         </div>
@@ -215,6 +218,41 @@ function checkBeforeGenerate(event) {
         window.location.href = '/generate/{{ job_id }}';
     }
 }
+
+(function() {
+    var dropZone = document.getElementById('bulkDropZone');
+    var inner = document.getElementById('bulkDropInner');
+    var fileInput = document.getElementById('bulkTemplateFile');
+
+    if (!dropZone || !inner || !fileInput) return;
+
+    ['dragenter', 'dragover'].forEach(function(eventName) {
+        dropZone.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            inner.classList.add('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-500');
+            e.dataTransfer.dropEffect = 'copy';
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(function(eventName) {
+        dropZone.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            inner.classList.remove('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-500');
+        });
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        var files = e.dataTransfer.files;
+        if (files.length > 0) {
+            var file = files[0];
+            var dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+        }
+    });
+})();
 </script>
 
 {% endblock %}
